@@ -129,17 +129,10 @@ If the API call is fiddly, do it in the browser: Settings → Branches → Add r
 Settings → General → Features: uncheck Wikis and Projects. Keep **Issues** — you'll
 use them in step 9.
 
-### Fix the placeholders
+### Placeholders
 
-Three files say `OWNER`. Replace with your GitHub username:
-
-```powershell
-$me = gh api user --jq .login
-(Get-ChildItem README.md,pyproject.toml,CITATION.cff) | ForEach-Object {
-    (Get-Content $_ -Raw) -replace 'OWNER', $me | Set-Content $_ -NoNewline
-}
-git add -A; git commit -m "docs: real repo URLs"; git push
-```
+Already done — `README.md`, `pyproject.toml` and `CITATION.cff` point at
+`github.com/rana-rishith/failure-direction`.
 
 ## 8. The daily loop
 
@@ -196,7 +189,7 @@ gh release create v0.1-stage0 --generate-notes
 run is green, add the badge to the README header:
 
 ```markdown
-![ci](https://github.com/OWNER/failure-direction/actions/workflows/ci.yml/badge.svg)
+![ci](https://github.com/rana-rishith/failure-direction/actions/workflows/ci.yml/badge.svg)
 ```
 
 ### Archive for a DOI

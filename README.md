@@ -6,6 +6,7 @@
 
 pre-hoc · reference-free at inference · tested on noise it has never heard
 
+![ci](https://github.com/rana-rishith/failure-direction/actions/workflows/ci.yml/badge.svg)
 ![status](https://img.shields.io/badge/status-active_research-1F3A5F)
 ![stage](https://img.shields.io/badge/stage-1_·_go%2Fno--go_gate-2E5A88)
 ![python](https://img.shields.io/badge/python-3.11_|_3.12-3776AB)
@@ -104,7 +105,7 @@ Training on one family and testing on the other is the shift axis.
 ## Quickstart
 
 ```bash
-git clone https://github.com/OWNER/failure-direction.git
+git clone https://github.com/rana-rishith/failure-direction.git
 cd failure-direction
 
 py -3.11 -m venv .venv && .venv\Scripts\Activate.ps1     # Windows

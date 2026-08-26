@@ -30,7 +30,7 @@ viz = ["matplotlib>=3.8", "seaborn>=0.13"]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
 [project.urls]
-Repository = "https://github.com/OWNER/failure-direction"
+Repository = "https://github.com/rana-rishith/failure-direction"
 
 [project.scripts]
 fd-manifest = "failure_direction.cli:manifest_main"

@@ -5,7 +5,7 @@ type: software
 authors:
   - given-names: Rana
     family-names: Rishith
-repository-code: "https://github.com/OWNER/failure-direction"
+repository-code: "https://github.com/rana-rishith/failure-direction"
 license: MIT
 keywords:
   - speech enhancement
