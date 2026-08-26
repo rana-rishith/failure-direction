@@ -1,0 +1,11 @@
+# PRE-COMMITTED go/no-go thresholds. Commit this file to git BEFORE running
+# scripts/20_gate.py. Editing it after seeing results invalidates the gate.
+#
+# G1 — the two failure directions are separable across noise types at all.
+g1_direction_spread: 0.30      # max-min of mean direction index across the 5 noise types
+#
+# G2 — cross-family shift actually degrades things, i.e. there is a problem to predict.
+g2_shift_gap: 0.10             # mean magnitude, shifted minus matched
+#
+# G3 — the asymmetry is consequential downstream, not merely measurable.
+g3_wer_asymmetry: 0.05         # mean WER, over-suppressed minus under-suppressed

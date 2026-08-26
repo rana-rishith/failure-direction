@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: "Failure Direction: pre-hoc, reference-free prediction of speech-enhancement failure direction and magnitude"
+message: "If you use this code, please cite it."
+type: software
+authors:
+  - given-names: Rana
+    family-names: Rishith
+repository-code: "https://github.com/OWNER/failure-direction"
+license: MIT
+keywords:
+  - speech enhancement
+  - failure prediction
+  - distribution shift
+  - marine acoustics

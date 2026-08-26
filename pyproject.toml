@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "failure-direction"
+version = "0.1.0"
+description = "Pre-hoc, reference-free prediction of speech-enhancement failure direction and magnitude under unseen noise."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11,<3.13"
+authors = [{ name = "Rana Rishith" }]
+keywords = ["speech-enhancement", "failure-prediction", "distribution-shift"]
+
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "pandas>=2.1",
+  "soundfile>=0.12",
+  "librosa>=0.10",
+  "pyyaml>=6.0",
+  "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=2.4", "torchaudio>=2.4", "torchmetrics>=1.4"]
+metrics = ["pesq>=0.0.4", "pystoi>=0.4"]
+asr = ["faster-whisper>=1.0", "jiwer>=3.0"]
+viz = ["matplotlib>=3.8", "seaborn>=0.13"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.urls]
+Repository = "https://github.com/OWNER/failure-direction"
+
+[project.scripts]
+fd-manifest = "failure_direction.cli:manifest_main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/failure_direction"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

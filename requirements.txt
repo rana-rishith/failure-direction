@@ -1,0 +1,8 @@
+# Install torch FIRST, from the CUDA index that matches your driver.
+# RTX 3060 (Ampere, sm_86):
+#   pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
+#
+# Then:
+#   pip install -e ".[metrics,asr,viz,dev]"
+#
+# Freeze the exact resolved set into requirements.lock.txt and COMMIT that file.

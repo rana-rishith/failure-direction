@@ -1,0 +1,25 @@
+# data & artifacts — never commit
+data/raw/
+data/manifests/*.csv
+runs/
+*.pt
+*.ckpt
+*.wav
+*.flac
+*.npz
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
