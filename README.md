@@ -113,7 +113,7 @@ pip install -e ".[metrics,asr,viz,dev]"
 pytest                                                    # 6 tests, no GPU needed
 ```
 
-Then follow [`docs/STAGE0.md`](docs/STAGE0.md). The environment notes assume an
+Then follow [`docs/GITHUB_SETUP.md`](docs/GITHUB_SETUP.md) to publish it, and [`docs/STAGE0.md`](docs/STAGE0.md) to run it. The environment notes assume an
 RTX 3060 12 GB (Ampere, sm_86) and Python 3.11 or 3.12 — **not 3.13**, where `pesq`
 has no usable Windows wheel.
 
