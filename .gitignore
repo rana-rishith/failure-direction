@@ -23,3 +23,8 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+
+# dataset & local outputs
+MarVEN/
+ckpt/
+eval/
