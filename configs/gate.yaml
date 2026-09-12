@@ -1,0 +1,40 @@
+# Pre-committed go/no-go gates for the direction index.
+#
+# Thresholds were fixed before results were seen. The OPERATIONALISATIONS of G1
+# and G2 (the index formula, and what "mean magnitude" means) were not specified
+# in the original file and were filled in after Claims 1 and 2 had been
+# observed. That is disclosed in the paper and recorded here so the disclosure
+# cannot be lost.
+
+sign_convention: "dir_idx = (r_over - r_under) / (r_over + r_under + eps); positive = over-suppression dominant"
+eps: 1.0e-8
+
+# ceiling is inert for B1/B3 (sigmoid => M <= 1). For B2 or any generative model
+# M can exceed 1, `under` ranges to 4 while `over` caps at 1, and the direction
+# index acquires a positive bias. B2-only asymmetry.
+ceiling: 2.0
+
+G1:
+  name: direction spread across the five noise types
+  statistic: max-min of per-noise-type mean dir_idx
+  threshold: 0.30
+  pre_committed: true
+  operationalised_after_results: true
+
+G2:
+  name: magnitude gap, unseen minus matched
+  statistic: r_over + r_under, direction-agnostic; median is primary
+  threshold: 0.10
+  pre_committed: true
+  operationalised_after_results: true
+
+G3:
+  name: WER asymmetry, over-suppressed minus under-suppressed
+  statistic: mean WER difference between direction-extreme groups
+  threshold: 0.05
+  pre_committed: true
+  operationalised_after_results: false
+
+  # if the fraction of rows whose direction matches their condition exceeds
+  # this, no within-condition direction contrast exists and G3 is untestable
+  max_collinearity: 0.95
