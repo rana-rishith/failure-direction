@@ -1,0 +1,30 @@
+# conda env create -f environment.yml && conda activate faildir
+# python -m ipykernel install --user --name faildir --display-name faildir
+#
+# Python is pinned to 3.12 because `pesq` has a prebuilt conda-forge binary
+# there and none for 3.13+, and because nothing else in the stack needs a
+# compiler on 3.12.
+name: faildir
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - numpy>=1.26
+  - pandas>=2.1
+  - scipy>=1.11
+  - libsndfile
+  - pysoundfile>=0.12
+  - pesq              # conda-forge only; this is the ITU reference implementation
+  - pyyaml
+  - pytest
+  - ipykernel
+  - lightgbm
+  - scikit-learn
+  - pip:
+      - pystoi>=0.4.1
+      - jiwer>=3.0
+      - faster-whisper>=1.0
+      - transformers>=4.40
+      # install torch separately, matched to your CUDA runtime:
+      #   pip install torch --index-url https://download.pytorch.org/whl/cu124
