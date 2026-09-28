@@ -38,3 +38,13 @@ G3:
   # if the fraction of rows whose direction matches their condition exceeds
   # this, no within-condition direction contrast exists and G3 is untestable
   max_collinearity: 0.95
+
+confound:
+  model: b3
+  steps: 20000
+  metric: si_sdr_improvement   # per-utterance out-in; median per SNR, then mean over SNR strata
+  note: one ~20-30 s source per noise type; type and recording are confounded; offset split impossible
+  loto:                        # train on 2 weather types, test on the 3rd
+    family_level: 0.5          # R >= 0.5 in all 3 held-outs -> Claim 1 is family-level
+    type_level: 0.2            # R <= 0.2 in all 3 -> recording-level failure; reframe Claim 1
+                               # anything else -> report as partial, no framing claim
