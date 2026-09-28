@@ -181,32 +181,3 @@ if __name__ == "__main__":
     main()
 
 
- """
- 
- === b3_loto_rainfall_smoke: train 7292 rows on ['hurricane', 'lightning'], held out rainfall
-[b3_loto_rainfall_smoke] b3 280,833 params | dev=cuda | train rows 7292 | steps 500 bs 8 lr 0.0002
-[b3_loto_rainfall_smoke] 250/500  val -10.058  0.6m elapsed
-[b3_loto_rainfall_smoke] 500/500  val -10.827  1.3m elapsed
-[b3_loto_rainfall_smoke] done at step 500. best val -10.827 -> b3_loto_rainfall_smoke_best.pt (weights-only export: b3_loto_rainfall_smoke.pt)
-wrote b3_loto_rainfall_smoke__loto-rainfall__test_matched.csv  n=40  0.4m
-wrote b3_loto_rainfall_smoke__loto-rainfall__test_unseen.csv  n=40  0.5m
-
-  heldout  n_matched  n_heldout  imp_matched_db  imp_heldout_db      R
-rainfall         40         40           3.992          -0.749 -0.188
-
-per-SNR median improvement (dB):
-               heldout_type  matched  heldout
-target_snr_db                               
--15               rainfall    1.514   -0.331
--10               rainfall   11.182   -0.199
--5                rainfall    1.241   -0.085
- 0                rainfall   12.691   -0.348
- 5                rainfall    0.684   -0.297
- 10               rainfall    7.480   -0.299
- 15               rainfall   -0.881   -0.691
- 20               rainfall   -1.978   -3.744
-
-smoke run: wiring only, no verdict
-
- 
- """   
