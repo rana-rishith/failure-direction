@@ -1,7 +1,7 @@
 """Stage 3: recording-identity confound, leave-one-type-out (LOTO) within weather.
 
 Train B3 on two weather noise types, test on the third. Each noise type in MarVEN
-is a single ~20-30 s source, so a held-out type is also a held-out recording.
+is a single 7.6-30 s source (three are looped), so a held-out type is also a held-out recording.
 Thresholds are pre-committed in configs/gate.yaml under `confound`.
 
 Set FAILDIR_ROOT and FAILDIR_CKPT in the shell BEFORE running (config binds at import).
@@ -124,8 +124,8 @@ def verdict(rows: list[dict], gate: dict) -> str:
 
 # ---------------------------------------------------------------- run
 
-def run_one(df, heldout, steps, limit, suffix, report_only):
-    tag = f"b3_loto_{heldout}{suffix}"
+def run_one(df, heldout, steps, limit, suffix, report_only, key=KEY):
+    tag = f"{key}_loto_{heldout}{suffix}"
     fold = make_loto_fold(df, heldout)
     fold_name = f"loto-{heldout}"
     print(f"\n=== {tag}: train {len(fold['train'])} rows on "
@@ -134,8 +134,8 @@ def run_one(df, heldout, steps, limit, suffix, report_only):
     if report_only:
         model = None
     else:
-        train(KEY, fold, tag, steps=steps, val_every=min(C.VAL_EVERY, max(steps // 2, 1)))
-        model = load_model(KEY, tag, kind="best")
+        train(key, fold, tag, steps=steps, val_every=min(C.VAL_EVERY, max(steps // 2, 1)))
+        model = load_model(key, tag, kind="best")
 
     m = _eval(model, fold["test_matched"], tag, fold_name, "test_matched", limit)
     u = _eval(model, fold["test_unseen"], tag, fold_name, "test_unseen", limit)
@@ -145,6 +145,7 @@ def run_one(df, heldout, steps, limit, suffix, report_only):
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--heldout", nargs="+", choices=WEATHER, default=list(WEATHER))
+    ap.add_argument("--model", choices=sorted(MODELS), default=KEY)
     ap.add_argument("--smoke", action="store_true", help="500 steps, 40 test rows, rainfall")
     ap.add_argument("--report", action="store_true", help="score saved CSVs only")
     a = ap.parse_args(argv)
@@ -154,13 +155,12 @@ def main(argv=None) -> None:
         steps, limit, suffix, heldouts = 500, 40, "_smoke", ["rainfall"]
     else:
         steps, limit, suffix, heldouts = gate["steps"], None, "", a.heldout
-    assert KEY in MODELS, f"model key {KEY!r} not in MODELS {list(MODELS)}"
-    print(f"model={KEY} steps={steps} heldouts={heldouts} out={OUT}")
+    print(f"model={a.model} steps={steps} heldouts={heldouts} out={OUT}")
 
     df = D.load_manifest()
     rows, tables = [], []
     for h in heldouts:
-        r, t = run_one(df, h, steps, limit, suffix, a.report)
+        r, t = run_one(df, h, steps, limit, suffix, a.report, key=a.model)
         rows.append(r)
         tables.append(t)
 
@@ -170,8 +170,8 @@ def main(argv=None) -> None:
     print("\nper-SNR median improvement (dB):\n", per_snr.to_string())
 
     if not a.smoke:
-        summary.to_csv(OUT / "loto_summary.csv", index=False)
-        per_snr.to_csv(OUT / "loto_per_snr.csv")
+        summary.to_csv(OUT / f"loto_summary__{a.model}.csv", index=False)
+        per_snr.to_csv(OUT / f"loto_per_snr__{a.model}.csv")
         print("\nVERDICT:", verdict(rows, gate))
     else:
         print("\nsmoke run: wiring only, no verdict")
