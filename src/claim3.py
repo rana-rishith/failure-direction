@@ -85,7 +85,7 @@ def load_joined(fold: str, split: str, arch: str = "b1") -> pd.DataFrame:
 
 
 def feature_lists(train: pd.DataFrame) -> dict[str, list[str]]:
-    full = [c for c in train.columns if c not in DROP]
+    full = [c for c in train.columns if c not in DROP and not c.endswith("_full")]
     assert_reference_free([c for c in full if c != "snr"])   # snr is the declared oracle
     feats_only = [c for c in full if c != "snr"]
     return {"baseline": BASELINE, "full": full, "feats_only": feats_only}
