@@ -3,8 +3,8 @@ title: "Failure Direction: pre-hoc, reference-free prediction of speech-enhancem
 message: "If you use this code, please cite it."
 type: software
 authors:
-  - given-names: Rana
-    family-names: Rishith
+  - given-names: Rana Rishith
+    family-names: Musunuri
 repository-code: "https://github.com/rana-rishith/failure-direction"
 license: MIT
 keywords:
