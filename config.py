@@ -135,3 +135,7 @@ def summary() -> str:
         f"stft      N_FFT={N_FFT} HOP={HOP} SR={SR} bins={N_BINS}\n"
         f"protocol  steps={TRAIN_STEPS} bs={BATCH_SIZE} lr={LR} seed={SEED}"
     )
+
+# Bins below this (DC and 31 Hz) are excluded from the energy decomposition.
+# Some clean files carry DC offsets of up to 97% of power; see Stage 3 DC finding.
+DECOMP_MIN_HZ = 60.0
