@@ -132,6 +132,8 @@ def safe_pesq(ref: np.ndarray, est: np.ndarray, sr: int = C.SR) -> float:
         if _pesq_fn is None:
             from pesq import pesq as pesq_fn   # conda-forge build; no pip wheel exists
             _pesq_fn = pesq_fn
+        ref = np.ascontiguousarray(ref, dtype=np.float64)
+        est = np.ascontiguousarray(est, dtype=np.float64)
         return float(_pesq_fn(sr, ref, est, "wb"))
     except Exception as e:  # noqa: BLE001
         g.exceptions += 1
@@ -158,13 +160,20 @@ def energy_decomposition(mask: torch.Tensor, mag_noisy: torch.Tensor,
     Raw values are unnormalised and not comparable across utterances. Use the
     r_over / r_under ratios for everything.
     """
+    import math
+    import config as C
+    k0 = int(math.ceil(C.DECOMP_MIN_HZ * C.N_FFT / C.SR))   # first frequency bin kept
     yh = mask * mag_noisy
-    return {
-        "e_over": float(((mag_clean - yh).clamp(min=0) ** 2).sum()),
-        "e_under": float(((yh - mag_clean).clamp(min=0) ** 2).sum()),
-        "e_clean": float((mag_clean ** 2).sum()),
-        "e_noisy": float((mag_noisy ** 2).sum()),
-    }
+    over = (mag_clean - yh).clamp(min=0) ** 2
+    under = (yh - mag_clean).clamp(min=0) ** 2
+    clean, noisy = mag_clean ** 2, mag_noisy ** 2
+    out = {}
+    for sfx, lo in (("", k0), ("_full", 0)):   # "" = DC-excluded (canonical), _full = old definition
+        out["e_over" + sfx] = float(over[..., lo:, :].sum())
+        out["e_under" + sfx] = float(under[..., lo:, :].sum())
+        out["e_clean" + sfx] = float(clean[..., lo:, :].sum())
+        out["e_noisy" + sfx] = float(noisy[..., lo:, :].sum())
+    return out
 
 
 def add_ratios(frame, eps: float = 1e-8):
