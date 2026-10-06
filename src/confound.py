@@ -134,7 +134,10 @@ def run_one(df, heldout, steps, limit, suffix, report_only, key=KEY):
     if report_only:
         model = None
     else:
-        train(key, fold, tag, steps=steps, val_every=min(C.VAL_EVERY, max(steps // 2, 1)))
+        if (C.CKPT / f"{tag}_best.pt").exists():
+            print(f"reuse {tag}_best.pt (no retrain)")
+        else:
+            train(key, fold, tag, steps=steps, val_every=min(C.VAL_EVERY, max(steps // 2, 1)))
         model = load_model(key, tag, kind="best")
 
     m = _eval(model, fold["test_matched"], tag, fold_name, "test_matched", limit)
