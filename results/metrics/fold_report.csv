@@ -1,0 +1,9 @@
+fold,split,rows,hours,speakers,noise_types
+weather,train,10973,38.28,80,"hurricane,lightning,rainfall"
+weather,val,1353,4.35,10,"hurricane,lightning,rainfall"
+weather,test_matched,1363,4.81,10,"hurricane,lightning,rainfall"
+weather,test_unseen,917,3.24,10,"bubble_curtain,large_commercial_ship"
+anthro,train,7203,25.3,80,"bubble_curtain,large_commercial_ship"
+anthro,val,945,3.04,10,"bubble_curtain,large_commercial_ship"
+anthro,test_matched,917,3.24,10,"bubble_curtain,large_commercial_ship"
+anthro,test_unseen,1363,4.81,10,"hurricane,lightning,rainfall"

@@ -1,0 +1,17 @@
+split,snr,n,spearman,top_decile_overlap,x_chance
+test_matched,-15,245,0.985,0.71,7.1
+test_matched,-10,298,0.987,0.72,7.2
+test_matched,-5,275,0.979,0.67,6.7
+test_matched,0,277,0.978,0.81,8.1
+test_matched,5,280,0.961,0.75,7.5
+test_matched,10,280,0.925,0.68,6.8
+test_matched,15,310,0.938,0.68,6.8
+test_matched,20,315,0.838,0.39,3.9
+test_unseen,-15,245,0.959,0.54,5.4
+test_unseen,-10,298,0.95,0.76,7.6
+test_unseen,-5,275,0.962,0.74,7.4
+test_unseen,0,277,0.947,0.59,5.9
+test_unseen,5,280,0.908,0.46,4.6
+test_unseen,10,280,0.878,0.39,3.9
+test_unseen,15,310,0.86,0.39,3.9
+test_unseen,20,315,0.713,0.32,3.2
