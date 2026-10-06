@@ -1,0 +1,4 @@
+heldout,n_matched,n_heldout,imp_matched_db,imp_heldout_db,R
+rainfall,905,458,12.926,1.149,0.089
+lightning,904,459,12.311,-0.028,-0.002
+hurricane,917,446,10.315,-0.033,-0.003
