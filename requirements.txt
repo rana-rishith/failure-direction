@@ -29,6 +29,9 @@ jiwer>=3.0
 faster-whisper>=1.0
 transformers>=4.40      # only for EnglishTextNormalizer
 
+# figures
+matplotlib>=3.8
+
 # tooling
 pytest>=8.0
 ipykernel>=6.29

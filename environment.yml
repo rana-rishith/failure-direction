@@ -21,6 +21,7 @@ dependencies:
   - ipykernel
   - lightgbm
   - scikit-learn
+  - matplotlib>=3.8   # figures (scripts/plot_*.py)
   - pip:
       - pystoi>=0.4.1
       - jiwer>=3.0
