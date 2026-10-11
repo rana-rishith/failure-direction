@@ -140,6 +140,61 @@ def within(te: pd.DataFrame, preds: dict[str, np.ndarray], by, min_n: int = 25):
     return pd.DataFrame(rows, columns=cols) if not rows else pd.DataFrame(rows)
 
 
+FEATURE_ARMS = ("full", "feats_only")
+N_BOOT = 2000
+MIN_N_DRHO = 10     # cells below this get no row at all; the figure hatches n < 30
+
+
+def _rank_rows(a: np.ndarray) -> np.ndarray:
+    """Average ranks along axis 1, matching scipy's default tie handling."""
+    from scipy.stats import rankdata
+    return rankdata(a, axis=1)
+
+
+def _rowwise_pearson(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    a = a - a.mean(1, keepdims=True)
+    b = b - b.mean(1, keepdims=True)
+    den = np.sqrt((a * a).sum(1) * (b * b).sum(1))
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return (a * b).sum(1) / den
+
+
+def drho_bootstrap(t: pd.DataFrame, by: list[str], n_boot: int = N_BOOT,
+                   seed: int = C.SEED, min_n: int = MIN_N_DRHO) -> pd.DataFrame:
+    """
+    d_rho = spearman(arm, y) - spearman(baseline, y) per stratum, with a paired
+    percentile bootstrap: each resample draws utterances once and recomputes
+    both correlations on the same draw, so the CI is on the difference, not on
+    two independent intervals. Point estimates equal within()'s values.
+    """
+    rng = np.random.default_rng(seed)
+    rows = []
+    for keys, g in t.groupby(by):
+        n = len(g)
+        if n < min_n:
+            continue
+        rec = dict(zip(by, keys if isinstance(keys, tuple) else (keys,)))
+        rec["n"] = n
+        idx = rng.integers(0, n, size=(n_boot, n))
+        ry = _rank_rows(g.y.to_numpy()[idx])
+        rb = _rowwise_pearson(_rank_rows(g.pred_baseline.to_numpy()[idx]), ry)
+        rec["rho_baseline"] = float(spearmanr(g.pred_baseline, g.y).statistic)
+        for arm in FEATURE_ARMS:
+            col = f"pred_{arm}"
+            if col not in g:
+                continue
+            rho = float(spearmanr(g[col], g.y).statistic)
+            boot = _rowwise_pearson(_rank_rows(g[col].to_numpy()[idx]), ry) - rb
+            boot = boot[np.isfinite(boot)]
+            rec[f"rho_{arm}"] = rho
+            rec[f"d_rho_{arm}"] = rho - rec["rho_baseline"]
+            rec[f"d_rho_{arm}_lo"] = float(np.quantile(boot, 0.025))
+            rec[f"d_rho_{arm}_hi"] = float(np.quantile(boot, 0.975))
+            rec[f"n_boot_{arm}"] = int(boot.size)
+        rows.append(rec)
+    return pd.DataFrame(rows)
+
+
 def run(fold: str = "weather", arch: str = "b1", damaging_only: bool = False,
         seed: int = C.SEED) -> dict:
     tr, va, te = (load_joined(fold, s, arch) for s in ("train", "val", "test_matched"))
@@ -180,6 +235,18 @@ def run(fold: str = "weather", arch: str = "b1", damaging_only: bool = False,
     by_cond.to_csv(C.METRICS / f"claim3_{suffix}_within_condition.csv", index=False)
     pd.DataFrame({"feature": importances.index, "gain": importances.values})\
         .to_csv(C.METRICS / f"claim3_{suffix}_importance.csv", index=False)
+
+    # Per-utterance predictions (figure panel b) and bootstrap d_rho (panel a).
+    keep_cols = [c for c in ("fold", "split", "row_idx", "uid", "noise_type", "snr", "y")
+                 if c in te.columns]
+    tp = te[keep_cols].assign(**{f"pred_{k}": v for k, v in preds.items()})
+    tp.to_csv(C.PREDICTIONS / f"claim3_{suffix}_preds.csv", index=False)
+    drho = pd.concat([
+        drho_bootstrap(tp, ["noise_type", "snr"], seed=seed).assign(level="cell"),
+        drho_bootstrap(tp, ["snr"], seed=seed).assign(level="snr"),
+    ], ignore_index=True)
+    drho.insert(0, "fold", fold)
+    drho.to_csv(C.METRICS / f"claim3_{suffix}_drho_ci.csv", index=False)
 
     print("\n=== pooled (NOT the verdict — SNR alone explains a lot) ===")
     print(table.round(4).to_string(index=False))
