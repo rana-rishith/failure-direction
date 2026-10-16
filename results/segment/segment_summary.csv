@@ -1,0 +1,8 @@
+model,fold,noise_type,n_A,n_B,seg_A,full_A,seg_B,full_B,S_A,R_seg
+b3,anthro,all,732,750,11.009,10.946,5.89,9.855,1.006,0.598
+b3,anthro,bubble_curtain,330,346,14.931,14.942,5.327,12.787,0.999,0.417
+b3,anthro,large_commercial_ship,402,404,8.811,8.616,6.235,8.328,1.023,0.749
+b3,weather,all,1168,1171,10.5,10.233,5.678,7.586,1.026,0.748
+b3,weather,hurricane,323,328,18.062,18.044,18.94,18.803,1.001,1.007
+b3,weather,lightning,426,426,10.92,10.546,0.367,5.798,1.035,0.063
+b3,weather,rainfall,419,417,7.34,7.049,6.173,7.58,1.041,0.814

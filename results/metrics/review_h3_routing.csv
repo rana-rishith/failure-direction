@@ -1,0 +1,19 @@
+policy,k,wer
+always enhance,0.0,15.939682218398948
+never enhance,100.0,17.45437371386162
+oracle per utterance,,13.895354721182066
+bypass top-k by pred_feats_only,5.0,16.32088520055325
+bypass top-k by pred_feats_only,10.0,16.671726883243934
+bypass top-k by pred_feats_only,20.0,17.430759369834362
+bypass top-k by pred_feats_only,30.0,17.6567823769524
+bypass top-k by pred_feats_only,50.0,17.491481968761597
+bypass top-k by pred_baseline,5.0,16.371487366325944
+bypass top-k by pred_baseline,10.0,16.776304692507505
+bypass top-k by pred_baseline,20.0,16.928111189825593
+bypass top-k by pred_baseline,30.0,17.720878453597813
+bypass top-k by pred_baseline,50.0,17.393651114934386
+bypass top-k by y,5.0,16.175825658671524
+bypass top-k by y,10.0,16.297270856525994
+bypass top-k by y,20.0,16.82015990284384
+bypass top-k by y,30.0,17.515096312788852
+bypass top-k by y,50.0,17.376783726343486
