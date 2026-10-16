@@ -48,3 +48,13 @@ confound:
     family_level: 0.5          # R >= 0.5 in all 3 held-outs -> Claim 1 is family-level
     type_level: 0.2            # R <= 0.2 in all 3 -> recording-level failure; reframe Claim 1
                                # anything else -> report as partial, no framing claim
+segment:                       # disjoint-segment control, src/segment.py
+  model: b3                    # primary; b1 repeat is optional
+  steps: 20000
+  window_sec: 3.0              # train crop and eval window (lightning half-loop = 3.79 s)
+  note: recording timeline split in half; seg model hears half A only; eval on 3 s windows of test_matched whose noise lies wholly in A or wholly in B
+  statistic: R_seg = score(seg on B) / score(full on B); score = median SI-SDR improvement per SNR, mean over SNR
+  sanity_S_A: 0.8              # score(seg on A) / score(full on A) below this -> inconclusive
+  recording_level: 0.8         # R_seg >= 0.8 -> matched performance is not sample replay
+  sample_level: 0.5            # R_seg <= 0.5 -> matched performance is mostly replay of heard samples
+                               # anything else -> partial, report, no framing claim
