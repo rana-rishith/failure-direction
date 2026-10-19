@@ -1,0 +1,31 @@
+# Gate R3: unheard recording of a heard noise type. Committed BEFORE src/r3.py runs.
+# Rung R3 sits between R1 (heard recording: MarVEN test_matched) and R4
+# (unheard type: MarVEN test_unseen). MarVEN has one recording per type, so R3
+# needs an outside corpus.
+
+r3:
+  primary:
+    models: [b1_anthro, b3_anthro, cm_anthro]     # trained on bubble_curtain + large_commercial_ship
+    R1: "MarVEN test rows, noise_type = large_commercial_ship (all 441), as shipped"
+    R3: >-
+      Same clean file and target SNR as each R1 row; noise = a DeepShip crop
+      (Cargo, Tanker, Passengership; Tug excluded: not a large commercial ship).
+      32 kHz -> 16 kHz (FFT low-pass decimation), mean removed, file and offset
+      drawn from rng(crc32(uid)), mixed with src.diverse.mix at the target SNR.
+    R4: "MarVEN test rows of weather types (rainfall, lightning, hurricane), 441 drawn per-SNR-stratified, random_state=0"
+  metric: "src.diverse.analyse (same split as all Stage 5): noise_removed_g (primary), d_g (secondary); plain columns reported"
+  position: "p = (med_R3 - med_R4) / (med_R1 - med_R4), pooled medians over rows"
+  validity: "R1 - R4 contrast in noise_removed_g must be >= 0.20 for a model to count; else 'no_contrast'"
+  criteria:
+    type_level: "p >= 0.67  (an unheard ship recording behaves like the heard one: failure tracks noise TYPE)"
+    recording_level: "p <= 0.33  (behaves like an unseen type: failure tracks the specific RECORDING)"
+    intermediate: "otherwise"
+  claim_verdict: "U1-R3 = the class shared by >= 2 of the 3 anthro models; else 'mixed'"
+  caveats_pre_stated:
+    - "DeepShip is the 63-file GitHub sample (60 usable), different hydrophone and site from MarVEN; channel shift is confounded with recording novelty."
+    - "MarVEN's own ship recording is long; R1 test crops are unheard segments of a heard recording (that is R2's question, already run for B3)."
+
+  exploratory:   # descriptive only, no verdict
+    models: [b1_weather, b3_weather, cm_weather]
+    conditions: "R1 = MarVEN weather test rows; MBARI storm crops (6 days) and MBARI dry crops (4 days) on the same clean/SNR; R4 = MarVEN anthro test rows"
+    note: "MBARI 'storm' mixes wind, rain and surf; it is not the same type as any one MarVEN weather recording, so no R3 verdict is drawn."
