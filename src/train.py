@@ -165,7 +165,7 @@ def train(model_key: str, fold: dict, tag: str, steps: int = C.TRAIN_STEPS,
 
 def main(argv=None) -> None:
     p = argparse.ArgumentParser(description="FailDir trainer")
-    p.add_argument("--model", choices=["b1", "b3"], required=True,
+    p.add_argument("--model", choices=["b1", "b3", "cm"], required=True,
                    help="b4 (Passthrough) has no weights and needs no training")
     p.add_argument("--fold", choices=list(C.FAMILIES), required=True)
     p.add_argument("--steps", type=int, default=C.TRAIN_STEPS)

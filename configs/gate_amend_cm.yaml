@@ -1,0 +1,18 @@
+# Amendment to gate_universal.yaml (definitions.architectures.complex_mask).
+# Committed BEFORE any cm_* model was trained or evaluated.
+
+complex_mask_amendment:
+  was: "DCCRN-class, trained on MarVEN folds"
+  now: >-
+    cm = ComplexMask in src/models.py: an UNBOUNDED complex ratio mask on the SAME
+    2-layer BLSTM (h=256) backbone as B1. Input adds the power-law compressed real and
+    imaginary STFT parts to log1p|X| (3.95 M params against B1's 2.76 M). The output
+    layer is linear (no sigmoid) and initialised at M = 1 + 0j, so training starts
+    from passthrough. Same protocol as B1: 20,000 steps, batch 8, lr 2e-4, 4 s crops,
+    SI-SDR loss, seed 1234.
+  reason: >-
+    Holding the backbone fixed isolates the change that U2 is about (bounded real
+    mask -> unbounded complex mask). A DCCRN would differ from B1 in many ways at once.
+    A DCCRN-class model stays open as further work.
+  models: "cm_weather, cm_anthro (src.train, MarVEN folds); cm_demand (src.diverse, DEMAND)"
+  counts_toward: "U2 (complex_mask class) and the S_stationarity primary set"

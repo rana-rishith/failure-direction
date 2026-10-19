@@ -445,7 +445,7 @@ def main(argv=None):
     g.add_argument("--train", action="store_true")
     g.add_argument("--eval", nargs="+", metavar="TAG")
     g.add_argument("--report", action="store_true")
-    p.add_argument("--model", choices=["b1", "b3"], default="b1")
+    p.add_argument("--model", choices=["b1", "b3", "cm"], default="b1")
     p.add_argument("--steps", type=int, default=C.TRAIN_STEPS)
     p.add_argument("--smoke", action="store_true", help="500 steps, tag <model>_demand_smoke")
     p.add_argument("--workers", type=int, default=0)

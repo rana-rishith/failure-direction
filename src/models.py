@@ -71,6 +71,39 @@ class CausalMask(nn.Module):
         return istft(X * M, x.shape[-1]), M
 
 
+class ComplexMask(nn.Module):
+    """CM: complex ratio mask, UNBOUNDED, on the same 2-layer BLSTM h=256 backbone as B1.
+
+    Holds the backbone fixed and changes only what the mask can do:
+      - complex: it rotates phase as well as scaling magnitude
+      - unbounded: |M| can exceed 1, so the output can carry more energy than the input
+    Input per frame: log1p|X| and the power-law compressed real/imag parts
+    (|X|**0.3 * e^{j angle X}). Output: real and imaginary mask, linear layer, no
+    squashing, initialised at M = 1 + 0j (identity) so training starts from passthrough.
+
+    Returns (waveform, |M|). |M| keeps the (B, bins, frames) magnitude interface:
+    |M X| = |M||X|, so the mask-intent energy split reads the same as for B1/B3.
+    """
+
+    def __init__(self, h: int = 256):
+        super().__init__()
+        self.rnn = nn.LSTM(3 * C.N_BINS, h, 2, batch_first=True, bidirectional=True)
+        self.out = nn.Linear(2 * h, 2 * C.N_BINS)
+        nn.init.zeros_(self.out.weight)
+        with torch.no_grad():
+            self.out.bias.zero_()
+            self.out.bias[: C.N_BINS] = 1.0           # real part 1, imaginary part 0
+
+    def forward(self, x):
+        X = stft(x)                                      # (B, bins, frames) complex
+        mag = X.abs()
+        comp = mag.clamp(min=1e-8) ** 0.3 / mag.clamp(min=1e-8)
+        feats = torch.cat([torch.log1p(mag), X.real * comp, X.imag * comp], dim=1)
+        o = self.out(self.rnn(feats.permute(0, 2, 1))[0]).permute(0, 2, 1).float()
+        Mc = torch.complex(o[:, : C.N_BINS], o[:, C.N_BINS:])
+        return istft(X * Mc, x.shape[-1]), Mc.abs()
+
+
 class Passthrough(nn.Module):
     """B4: identity. The floor every other baseline must beat."""
 
@@ -81,6 +114,7 @@ class Passthrough(nn.Module):
 MODELS: dict[str, type[nn.Module]] = {
     "b1": SpectralMask,
     "b3": CausalMask,
+    "cm": ComplexMask,
     "b4": Passthrough,
 }
 
