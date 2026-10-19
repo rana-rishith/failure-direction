@@ -1,0 +1,23 @@
+# Pre-registered stationarity test (src/stationarity.py).
+#
+# Origin, stated so the paper can report it: D2 (spectral distance) failed, and
+# the B1 per-pair table then suggested that steady noises transfer and bursty
+# ones do not. That observation is post-hoc on the B1 pairs. This gate was
+# committed BEFORE any of the primary-set outcomes existed: B3 had never been
+# evaluated on DEMAND, b3_demand and the complex-mask (cm_*) models had not
+# been trained.
+
+S_stationarity:
+  measure: "sigma = median over 64 log-mel bands (src.distance features) of the frame-to-frame std of band log-energy (dB), RMS-normalised noise, mean over segments; MarVEN noise = noisy - clean (test split), DEMAND = 10 s segments of the whole recording"
+  outcome: "median noise_removed at SNR <= 0 dB, output STFT, results/diverse/<tag>.csv"
+  hypothesis: "lower sigma (steadier noise) -> higher noise_removed on unseen noise"
+  primary_set:
+    full: "unseen pairs of b3_weather (DEMAND only), b3_anthro (DEMAND only), b3_demand (MarVEN + held-out envs), cm_weather, cm_anthro, cm_demand (all unseen pairs)"
+    b3: "the three B3 tags only; used ONLY if the complex-mask arm is abandoned, and that decision is recorded in this file (with its commit) before --set b3 is run"
+  pass_if:
+    - "Spearman rho(sigma, noise_removed) <= -0.4"
+    - "95% cluster-bootstrap CI upper bound < 0 (resample noise sources, 2000 draws, seed 1234)"
+  secondary: "AUC (steady -> active, active = noise_removed >= 0.9) >= 0.75; rho with SI-SDR gain; per-model rho"
+  exploratory: "B1 pairs (b1_weather, b1_anthro, b1_demand) reported separately, never pooled into the primary set"
+  run_once: "the primary analysis is run once, after all primary tags are evaluated; the script refuses a partial set"
+  on_fail: "stationarity is reported as not supported; transfer remains described, not explained"
