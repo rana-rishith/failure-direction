@@ -60,12 +60,18 @@ def rows(man: pd.DataFrame, types, n=None) -> pd.DataFrame:
     t = man[(man.split == "test") & man.noise_type.isin(types)]
     if n is not None and len(t) > n:
         k = int(np.ceil(n / len(C.SNR_LEVELS)))
-        t = t.groupby("target_snr_db", group_keys=False).apply(lambda g: g.sample(min(k, len(g)), random_state=0))
+        # explicit loop: groupby.apply drops the grouping column in pandas >= 2.2.
+        # Same draws as the gate (per-SNR g.sample(min(k, len(g)), random_state=0)).
+        t = pd.concat([g.sample(min(k, len(g)), random_state=0) for _, g in t.groupby("target_snr_db")])
         t = t.sample(min(n, len(t)), random_state=0)
     return t.reset_index(drop=True)
 
 
 def run(models, cond: str, frame: pd.DataFrame, pool: Pool | None, dev, out: Path):
+    done = out / f"{cond}.csv"
+    if done.exists() and len(pd.read_csv(done)) == len(frame) * len(models):
+        print(f"  {cond}: complete on disk, skipped")
+        return pd.read_csv(done)
     rec = []
     for i, r in frame.iterrows():
         y, _ = sf.read(C.ROOT / r.clean_path, dtype="float32")
