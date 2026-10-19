@@ -1,0 +1,17 @@
+# Correction to gate_amend_level.yaml, written after the level-aligned rerun.
+# (Kept as a separate file: gate_amend_level.yaml is open in an editor that
+# keeps saving over external writes.)
+
+level_aligned_split_correction:
+  text: >-
+    gate_amend_level.yaml says bounded masks sit at g ~ 1. The level-aligned rerun
+    (commit after 09ca3bd) shows that holds only at high SNR: at SNR <= 0 dB, g is
+    0.78-0.98 for B1/B3, and as low as 0.57 for b1_weather on matched noise at
+    -15 dB. Consequences, reported as sensitivity analyses next to the registered
+    plain-split results: (1) on matched noise the direction index d drops from
+    +0.78..+0.87 to -0.01..+0.47 once level is aligned, so part of the plain-split
+    over-suppression is a 1-5 dB level drop; (2) for b1_demand on ship, lightning
+    and rainfall the plain "noise removed" of 49-64% falls to -18..+25%, so that
+    partial transfer was mostly the model turning the level down (g 0.67-0.76),
+    not spectral suppression. Full-transfer cases (noise removed >= 0.9) are
+    unchanged by alignment.
