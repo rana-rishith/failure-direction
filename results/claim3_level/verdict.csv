@@ -1,0 +1,7 @@
+target,fold,mean_within_snr_rho_featsonly,mean_within_snr_rho_baseline,snr_strata_won,snr_strata,cells_won_frac,cells,auc_top10_featsonly_minus_baseline,rule_a,rule_b,pass
+intent,weather,0.78925,0.18475,8,8,0.9166666666666666,24,0.0392,True,True,True
+intent,anthro,0.8540000000000001,0.4405,8,8,0.9375,16,0.0066,True,True,True
+level,weather,0.719125,0.15150000000000002,8,8,0.9166666666666666,24,0.0273,True,True,True
+level,anthro,0.72525,0.387625,8,8,0.9375,16,0.0049,True,True,True
+intent_level,weather,0.773,0.18412500000000004,8,8,0.9166666666666666,24,0.0335,True,True,True
+intent_level,anthro,0.8465,0.43237499999999995,8,8,0.9375,16,0.0084,True,True,True
