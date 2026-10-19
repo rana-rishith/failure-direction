@@ -145,7 +145,10 @@ def mix(clean: np.ndarray, noise: np.ndarray, snr_db: float, ps_ref: float | Non
 
 
 def clean_paths(df: pd.DataFrame, split: str) -> list[str]:
-    return sorted(df[df.split == split].clean_path.unique())
+    """One clean file per utterance. MarVEN stores a clean file per noisy row, so
+    each utterance has two clean paths; deduplicate on the LibriSpeech key."""
+    f = df[df.split == split].sort_values("clean_path").drop_duplicates("key")
+    return sorted(f.clean_path)
 
 
 # ------------------------------------------------------------- training ----
