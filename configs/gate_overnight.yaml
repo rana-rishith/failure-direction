@@ -1,0 +1,64 @@
+# Gate XN: overnight cross-corpus run (all datasets). Committed BEFORE any step
+# of run_overnight.ps1 runs. Seed replicates, the cross-corpus matrix and the
+# pretrained-model ladder results are all unseen at commit time.
+# R1 and R3 of gate_r3.yaml were seen (the run crashed at R4); R4 and the
+# verdict were not. gate_r3.yaml is unchanged and is decided first, alone.
+
+order: [r3_finish, xc_build, seeds_train, xc_eval, dfn3_ext, fsd50k_extract, sgmse_ext_until_deadline, ext_score, report]
+
+datasets:
+  MarVEN: "all 2280 test rows, as shipped (R1 or R4 depending on the model's training family)"
+  DeepShip: "GitHub sample: ship (Cargo, Tanker, Passengership; 60 files) and tug (3 files, descriptive only)"
+  MBARI: "MARS hydrophone, 6 storm days and 4 dry days, random 16 kHz crops"
+  DEMAND: "dem_A (first 80% of non-holdout envs), dem_B (last 20%), dem_H (holdout DLIVING, OOFFICE, TCAR); same definitions as src/diverse.py"
+  VoiceBank-DEMAND: "test set, 824 noisy/clean pairs as shipped (VCTK speech, not LibriSpeech)"
+  FSD50K: "extracted only (7-Zip). Not used for any result in this run; its diversity-training gate comes later"
+  QiandaoEar22: "excluded: the local copy is download-error files only"
+mixing:
+  base_rows: >-
+    400 MarVEN test rows, 50 per SNR, drawn per SNR with random_state=1. Each
+    external condition reuses the same base rows (clean file + target SNR), so
+    every condition is paired on speech and SNR. Noise crops are drawn from
+    rng(crc32(cond|uid)); mixing is src.diverse.mix semantics (mean-removed powers).
+    Base rows are ordered by within-SNR rank so that any prefix is SNR-balanced.
+  saved: "results/xcorpus/mix/<cond>/<uid>.wav (float32) + results/xcorpus/manifest.csv, kept for U3 features later"
+  level: "float32, no peak normalisation (smoke peaks up to 1.8 at -15 dB, never clipped); MarVEN rows are used as shipped"
+  crop_check: "crops with mean-removed power <= 1e-10 or >= 1% exact zeros are redrawn (hydrophone gaps)"
+  smoke_verified: "SNR error 0.000 dB on all smoke mixtures; passthrough scoring gives nr = 0, g = 1"
+metric: "src.diverse.analyse on every (model, mixture): noise_removed_g and d_g primary; plain split, g, SI-SDR gain reported"
+
+seeds:
+  models: "b1, b3, cm x anthro, weather; new seeds 2 and 3 (tags <model>_<fam>_s2/_s3), 20k steps, same protocol; existing seed-1234 checkpoints are not touched"
+  H_S1_contrast: >-
+    For each of the 6 model/family pairs: sign of [noise_removed_g(R1 MarVEN heard types)
+    - noise_removed_g(R4 MarVEN unseen types)] is the same in all 3 seeds -> 'robust';
+    else 'seed_sensitive'. Report seed SD of each median.
+  H_S2_r3: >-
+    U1-R3 extended: for anthro models, the gate_r3 class (p on noise_removed_g,
+    contrast >= 0.20) computed per seed (9 runs). 'type_level' or 'recording_level'
+    if >= 6 of 9 agree; else 'mixed'. gate_r3's single-seed verdict is reported
+    first and unchanged.
+
+ladder_trained:   # descriptive, no verdict: these extend existing claims
+  - "demand models: dem_A vs dem_B vs dem_H vs marine (MarVEN, DeepShip, MBARI) on paired base rows"
+  - "loto models: held-out MarVEN type vs the other four"
+  - "all models: VoiceBank-DEMAND test (different speech corpus; not paired)"
+
+ladder_pretrained:
+  models: [DFN3 (all mixtures), SGMSE+ SB_16k (interleaved subset until the deadline)]
+  conditions: "heard family = dem_A, dem_H (DEMAND is VB-DMD's noise source); in-distribution check = vbdmd_test; unseen = marven (base row as shipped), deepship_ship, mbari_storm, mbari_dry"
+  SGMSE_order: "base row by base row, all 6 paired conditions + 1 vbdmd file per base row, so the finished set is paired"
+  H_P1: >-
+    Novelty effect on direction, per model: delta = median d_g(unseen pooled) -
+    median d_g(dem_A + dem_H pooled), on paired base rows only.
+    |delta| >= 0.20 -> 'direction_shifts_with_novelty'; |delta| < 0.10 ->
+    'direction_is_model_trait'; else 'inconclusive'. SGMSE needs >= 40 paired
+    base rows for a verdict, else 'underpowered'.
+  H_P2: "same rule on noise_removed_g (0.20 / 0.10 thresholds)"
+  caveat: "DFN3's training noise (DNS) may or may not contain DEMAND; its 'heard family' label is unverified and its verdict is reported as provisional."
+  scoring: "numpy split of src/pilot_level.py (identical to diverse.analyse's _g split), plain columns kept"
+
+not_in_this_run:
+  - "U3 (Claim 3 prediction on a second corpus): needs labels/features on the saved mixtures; separate gate"
+  - "FSD50K diversity training: separate gate (needs speech-label filtering)"
+  - "fine-tuned DFN3 (WSL)"
