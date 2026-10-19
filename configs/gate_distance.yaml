@@ -1,0 +1,19 @@
+# Pre-committed gate for src/distance.py. Companion to gate_universal.yaml
+# (whose D_diversity_control result was known when this was written).
+
+# ---------------------------------------------------------------
+# D2: distance to the nearest training noise (src/distance.py)
+# Written after the D_diversity_control outcomes were seen (per-type
+# noise_removed was known); no distance had been computed when this was
+# committed. Report that order in the paper.
+# ---------------------------------------------------------------
+D2_distance:
+  feature: "64-band log-mel frames (n_fft 1024, hop 256, 60-8000 Hz) of RMS-normalised noise; Gaussian fit; Frechet distance"
+  distance: "minimum over the model's training noise sources (MarVEN noise = noisy - clean; DEMAND regions as in src/diverse.py)"
+  outcome: "median noise_removed at SNR <= 0 dB, output STFT, from results/diverse/<tag>.csv"
+  units: "UNSEEN (model, test-noise) pairs only: b1_weather 19, b1_anthro 20, b1_demand 8 = 47"
+  pass_if:
+    - "Spearman rho(log10 FD, noise_removed) <= -0.5 over the unseen pairs"
+    - "95% cluster-bootstrap CI upper bound < 0 (resample test-noise sources, 2000 draws, seed 1234)"
+  secondary: "rho with SI-SDR gain; AUC of distance for active (noise_removed >= 0.9) vs not; per-model rho; LTAS distance; seen pairs reported separately"
+  on_fail: "the distance account is reported as not supported; per-pair table kept as descriptive"
