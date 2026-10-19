@@ -1,0 +1,17 @@
+# Pre-committed rule for the Claim 3 level re-check (src/labels_level.py,
+# src/claim3_level.py). Written after the level effect was found
+# (gate_amend_level*.yaml) and BEFORE any level-aligned Claim 3 label or
+# prediction existed.
+
+C3_level_recheck:
+  question: "Does input-side prediction of speech loss survive when the target excludes the recoverable output-level drop?"
+  model: "B1, both folds; train / val / test_matched; same features, arms, LightGBM settings and analysis as src/claim3.py"
+  targets:
+    intent: "log10 r_over, original target; must reproduce the existing Claim 3 numbers (harness check)"
+    level: "log10 e_over_lv / e_clean, level-aligned output split (PRIMARY)"
+    intent_level: "log10 e_over_ilv / e_clean, level-aligned mask intent (robustness)"
+  pass_if_both_folds:
+    - "feats_only beats baseline in mean within-SNR Spearman AND in >= 6 of 8 SNR strata"
+    - "feats_only beats baseline in >= 75% of noise_type x SNR cells (n >= 25)"
+  report: "all three targets, both folds; per-cell d_rho with bootstrap CIs; AUC top-decile margins"
+  on_fail: "Claim 3 is reported as predicting the level drop rather than irreversible speech loss, with both targets shown"
