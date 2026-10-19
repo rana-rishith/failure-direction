@@ -1,0 +1,24 @@
+# Gate P-L: level-aligned re-score of the Stage 5 zero-shot pilot (DFN3, SGMSE+).
+# Committed BEFORE src/pilot_level.py is run. The plain-split pilot numbers
+# (stage5_pilot_pretrained_2026-10-19) were already seen; the level-aligned
+# numbers were not.
+
+pilot_level:
+  data: "sgmse/pilot_out (SGMSE+ SB 16k) and sgmse/dfn_out (DFN3), 400 MarVEN test rows each (pilot_rows.csv)"
+  method: >-
+    Same split as gate_amend_level.yaml: g = <e - mean, y - mean> / <y - mean, y - mean>,
+    clamped [0.1, 10]; ratios on |STFT(e)| / g. n_fft 512, hop 128, Hann, bins 0-1 dropped.
+    Plain columns recomputed alongside as a reproduction check.
+  reproduction_check: "plain r_over / r_under must match *_metrics.csv to 1e-3 relative (median); else STOP"
+  question: "Does 'diverse-trained models actively over-suppress unseen marine noise' survive level alignment?"
+  criteria:
+    survives: >-
+      For BOTH models: level-aligned median d > 0 at >= 6 of 8 SNRs, AND pooled
+      median level-aligned noise_removed >= 0.80.
+    partly_level: >-
+      Either model: level-aligned median d <= 0 at >= 3 SNRs, OR pooled median
+      noise_removed drops below 0.80. Report the over-suppression claim as
+      confounded by level for that model.
+    reversed: "Either model: pooled level-aligned median d < -0.3 (inert/under-suppression once level is aligned)."
+  also_reported: "g median by SNR and noise type; r_add_g; per-type d. Descriptive only."
+  scope: "Pilot only (10 per cell); no R1 yet, so this does not test novelty for these models."
