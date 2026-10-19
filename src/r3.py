@@ -94,7 +94,7 @@ def run(models, cond: str, frame: pd.DataFrame, pool: Pool | None, dev, out: Pat
     return d
 
 
-def report(gate_contrast=0.20):
+def report(gate_contrast=0.20, suffix=""):
     d = pd.concat([pd.read_csv(f) for f in sorted(OUT.glob("*.csv")) if f.stem not in ("summary", "verdict", "by_snr")])
     d = derive(d, "_g")  # d, noise_removed = level-aligned; plain added below
     d["d_plain"] = (d.r_over - d.r_under) / (d.r_over + d.r_under + 1e-8)
@@ -104,7 +104,7 @@ def report(gate_contrast=0.20):
     s.to_csv(OUT / "summary.csv")
     d.groupby(["tag", "cond", "snr"])[cols].median().to_csv(OUT / "by_snr.csv")
     v = []
-    for tag in ("b1_anthro", "b3_anthro", "cm_anthro"):
+    for tag in (f"b1_anthro{suffix}", f"b3_anthro{suffix}", f"cm_anthro{suffix}"):
         if (tag, "R3_deepship") not in s.index:
             continue
         row = dict(tag=tag)
@@ -131,16 +131,19 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--deepship"); ap.add_argument("--mbari")
     ap.add_argument("--smoke", action="store_true"); ap.add_argument("--report", action="store_true")
+    ap.add_argument("--suffix", default="", help="seed replicate, e.g. _s2 -> tags b1_anthro_s2, results/r3_s2")
     a = ap.parse_args(argv)
+    global OUT
+    OUT = C.EVAL / f"r3{a.suffix}"
     if a.report:
-        return report()
+        return report(suffix=a.suffix)
     OUT.mkdir(parents=True, exist_ok=True)
     dev = C.device()
     man = pd.read_csv(C.ROOT / "manifest.csv")
     lim = 16 if a.smoke else None
     ship = rows(man, ["large_commercial_ship"], lim)
     weather = rows(man, list(C.WEATHER), len(ship))
-    load = lambda fam: {f"{k}_{fam}": M.load_model(k, f"{k}_{fam}", kind="best", device=dev) for k in ("b1", "b3", "cm")}
+    load = lambda fam: {f"{k}_{fam}{a.suffix}": M.load_model(k, f"{k}_{fam}{a.suffix}", kind="best", device=dev) for k in ("b1", "b3", "cm")}
     ds = Pool([p for p in Path(a.deepship).rglob("*.wav") if p.parent.name in SHIPS])
     print(f"DeepShip pool: {len(ds.files)} files; device {dev}")
     ma = load("anthro")
@@ -157,7 +160,7 @@ def main(argv=None):
         run(mw, "X_mbari_storm", wr, Pool(sorted(mb.glob("storm_*.wav"))), dev, OUT)
         run(mw, "X_mbari_dry", wr, Pool(sorted(mb.glob("dry_*.wav"))), dev, OUT)
         run(mw, "X_R4_anthro", anth, None, dev, OUT)
-    report()
+    report(suffix=a.suffix)
 
 
 if __name__ == "__main__":
