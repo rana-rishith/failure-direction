@@ -1,0 +1,107 @@
+# Universal-claim gates. Append to configs/gate.yaml.
+# Commit BEFORE any run below starts, then record the hash and date here.
+# Any threshold changed after a run is reported as post-hoc in the paper.
+
+provenance:
+  committed_at: ""        # fill: YYYY-MM-DD
+  commit: ""              # fill: git short hash
+
+definitions:
+  r_over:    "e_over / e_clean, DC bins 0-1 excluded"
+  r_under:   "e_under / e_clean, DC bins 0-1 excluded"
+  r_over_x:  "r_over minus B4 r_over on the same utterance (excess above the passthrough floor)"
+  d:         "(r_over - r_under) / (r_over + r_under + 1e-8)"
+  nr:        "1 - r_under / r_under_B4, same utterance (fraction of noise excess removed)"
+  r_add:     "sum(clamp(|Yhat| - |X|, min=0)^2) / e_clean, energy the output adds beyond the noisy input; 0 by construction for bounded masks"
+  basis:     "mask-free models use the output STFT; bounded masks report both mask-intent (M*X) and output STFT, and gates use output STFT for every model"
+  rungs:
+    R1: "heard samples (MarVEN test_matched)"
+    R2: "unheard segment of a heard recording (segment control, half B)"
+    R3: "unheard recording of a heard type (DEMAND / FSD50K, split by recording ID)"
+    R4: "unseen type (MarVEN test_unseen, family folds)"
+  architectures:
+    bounded_mask:   [B1, B3]
+    complex_mask:   [DCCRN-class, trained on MarVEN folds]
+    diverse_pretrained: [DeepFilterNet3 fine-tuned per fold]
+    generative:     [SGMSE+ fine-tuned per fold, or zero-shot if fine-tune fails smoke test]
+  snr_low: [-15, -10, -5, 0]
+
+# ---------------------------------------------------------------
+# M: aggressiveness-control method (mask exponent gamma, mixing alpha)
+# ---------------------------------------------------------------
+M0_oracle_headroom:
+  data: "test_matched, B1 and B3, both folds (4 cells)"
+  grid_gamma: [0.3, 0.5, 0.7, 1.0, 1.5, 2.0]
+  grid_alpha: [0.5, 0.7, 0.9, 1.0]
+  compare: "per-utterance oracle gamma vs single best global gamma, same cell"
+  pass_if: "mean SI-SDR gain >= 0.5 dB in >= 3 of 4 cells"
+  secondary: "B1 ASR subset (matched, SNR <= -5, 818 rows): oracle-vs-global corpus WER gain reported, no threshold"
+  on_fail: "drop the method; paper stays measurement-only"
+
+M1_predicted_gamma:
+  requires: M0_oracle_headroom passes
+  predictor: "regressor on the 33 input features -> oracle gamma, 5-fold CV grouped by speaker_id"
+  pass_if:
+    - "predicted gamma recovers >= 40% of the (oracle - global) SI-SDR gain in >= 3 of 4 cells"
+    - "corpus WER on the B1 ASR subset is not worse than always-enhance (15.94)"
+  report: "same numbers for alpha mixing; alpha applies to every architecture, gamma to masks only"
+
+# ---------------------------------------------------------------
+# U1: failure direction follows noise novelty
+# ---------------------------------------------------------------
+U1_novelty_monotone:
+  unit: "one architecture, one SNR level in snr_low"
+  statistic: "median d per rung"
+  pass_unit_if: "median d strictly decreases R1 > R2 > R4 (R3 added where the corpus allows)"
+  pass_arch_if: "unit passes in >= 3 of 4 snr_low levels"
+  pass_if: "bounded_mask passes"
+
+U1_failure_class:
+  purpose: "classify how each architecture fails at R4, to test the model-class half of the claim"
+  unit: "one architecture, median over snr_low rows at R4"
+  classes:
+    inert:        "nr < 0.30 and r_over_x(R4) < r_over_x(R1)"
+    over:         "r_over_x(R4) >= r_over_x(R1)"
+    hallucinate:  "median r_add >= 0.05"
+  rule: "an architecture can carry more than one class; all assignments are reported"
+  pass_if: "every architecture receives at least one class (the classification is complete)"
+  note: "no class outcome is a failure; the claim is that class is predictable from architecture and training-noise diversity"
+
+# ---------------------------------------------------------------
+# U2: U1 holds beyond bounded masks
+# ---------------------------------------------------------------
+U2_beyond_bounded:
+  pass_if: "U1_novelty_monotone pass_arch_if holds for >= 2 of 3 non-bounded architecture classes"
+  on_fail: "headline narrows to 'bounded mask estimators'"
+
+# ---------------------------------------------------------------
+# U3: input-side ranking of speech loss
+# ---------------------------------------------------------------
+U3_within_condition:
+  target: "log r_over_x"
+  cells: "noise type x SNR"
+  arms: [feats_only_lgbm, ridge_33, baseline_snr_logE, wada_snr]
+  pass_if:
+    - "feats_only mean cell Spearman rho beats both baselines"
+    - "feats_only beats both baselines in >= 75% of cells"
+    - "both of the above hold on MarVEN and on at least one of DEMAND / FSD50K"
+
+U3_transfer:
+  design: "predictor trained without the held-out type; enhancer fixed"
+  pass_if: "mean within-SNR rho > baseline rho for >= 3 of 5 MarVEN types"
+  report: "same test on DEMAND / FSD50K held-out classes, descriptive"
+
+# ---------------------------------------------------------------
+# D: diversity control (src/diverse.py)
+# Same B1 architecture and protocol as the MarVEN models; only the training
+# noise changes (DEMAND 16 kHz: 14 training environments; DLIVING, OOFFICE, TCAR held out; SCAFE absent).
+# ---------------------------------------------------------------
+D_diversity_control:
+  model: "b1_demand: SpectralMask, 20,000 steps, bs 8, lr 2e-4, 4 s crops, seed 1234, MarVEN train-split speech"
+  data: "MarVEN test split (all five types unseen), SNR <= 0 dB, output-STFT basis"
+  verdict:
+    diversity_explains: "median d > 0 AND median noise_removed >= 0.5"
+    architecture_explains: "median d < 0 AND median noise_removed < 0.3"
+    otherwise: "mixed; reported as partial"
+  secondary: "b1_demand's own gradient, median d at dem_A, dem_B, dem_H, marven (SNR <= 0); reported, no threshold"
+  comparison: "b1_weather and b1_anthro evaluated with the same code on the same rows"
