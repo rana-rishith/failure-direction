@@ -3,8 +3,8 @@
 # Any threshold changed after a run is reported as post-hoc in the paper.
 
 provenance:
-  committed_at: ""        # fill: YYYY-MM-DD
-  commit: ""              # fill: git short hash
+  committed_at: "2026-10-19"
+  commit: "29c1566"       # gates and src/diverse.py, before any diversity-control run
 
 definitions:
   r_over:    "e_over / e_clean, DC bins 0-1 excluded"
