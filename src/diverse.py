@@ -72,7 +72,8 @@ K0 = int(math.ceil(C.DECOMP_MIN_HZ * C.N_FFT / C.SR))   # first STFT bin kept (D
 N_DEM_EVAL = 400                               # mixtures per dem_* condition (50 per SNR)
 N_VAL = 200
 VAL_LEN = 6 * C.SR
-COND_ID = {"dem_A": 1, "dem_B": 2, "dem_H": 3}   # fixed seeds; str hash() is salted per run
+COND_ID = {"dem_A": 1, "dem_B": 2, "dem_H": 3}
+G_MIN, G_MAX = 0.1, 10.0                       # clamp for the level-aligned split   # fixed seeds; str hash() is salted per run
 
 
 # ------------------------------------------------------------- DEMAND ------
@@ -319,10 +320,20 @@ def analyse(model, x: np.ndarray, y: np.ndarray, dev: str) -> dict:
     ro_o, ru_o, ra_o = _ratios(Yo, Cm, X, sl)
     ro_b, ru_b, _ = _ratios(X, Cm, X, sl)
     e = est.cpu().numpy()
+    # Level-aligned split ("_g"). SI-SDR training leaves the output level free;
+    # an unbounded mask can settle at any gain, and the plain split then counts
+    # extra level as energy beyond clean. g is the level of the clean component
+    # in the output; dividing by g puts that component at the clean level.
+    # For the noisy input g ~ 1, so the passthrough floor is unchanged.
+    yc = y.astype(np.float64) - y.mean()
+    g = float(np.dot(e.astype(np.float64) - e.mean(), yc) / (np.dot(yc, yc) + 1e-12))
+    g_used = float(np.clip(g, G_MIN, G_MAX))
+    ro_g, ru_g, ra_g = _ratios(Yo / g_used, Cm, X, sl)
     return {"sisdr_in": _si_sdr(x, y), "sisdr_out": _si_sdr(e, y),
             "r_over_i": ro_i, "r_under_i": ru_i,
             "r_over": ro_o, "r_under": ru_o, "r_add": ra_o,
-            "r_over_b4": ro_b, "r_under_b4": ru_b}
+            "r_over_b4": ro_b, "r_under_b4": ru_b,
+            "g": g, "r_over_g": ro_g, "r_under_g": ru_g, "r_add_g": ra_g}
 
 
 def tag_family(tag: str) -> str | None:
@@ -374,11 +385,13 @@ def evaluate(tag: str, holdout=HOLDOUT, n_dem: int = N_DEM_EVAL, seed: int = C.S
 
 
 # --------------------------------------------------------------- report ----
-def derive(f: pd.DataFrame) -> pd.DataFrame:
+def derive(f: pd.DataFrame, basis: str = "") -> pd.DataFrame:
+    """basis "" = plain output-STFT split; "_g" = level-aligned split."""
     f = f.copy()
-    f["d"] = (f.r_over - f.r_under) / (f.r_over + f.r_under + 1e-8)
-    f["over_x_floor"] = f.r_over / f.r_over_b4
-    f["noise_removed"] = 1 - f.r_under / f.r_under_b4
+    ro, ru = f["r_over" + basis], f["r_under" + basis]
+    f["d"] = (ro - ru) / (ro + ru + 1e-8)
+    f["over_x_floor"] = ro / f.r_over_b4
+    f["noise_removed"] = 1 - ru / f.r_under_b4
     f["sisdr_gain"] = f.sisdr_out - f.sisdr_in
     return f
 
@@ -388,7 +401,8 @@ def report() -> pd.DataFrame:
     files = [p for p in files if not p.name.startswith("summary")]
     if not files:
         raise FileNotFoundError(f"no evaluation CSVs in {OUT}; run --eval first")
-    f = derive(pd.concat([pd.read_csv(p) for p in files], ignore_index=True))
+    raw = pd.concat([pd.read_csv(p) for p in files], ignore_index=True)
+    f = derive(raw)
     cols = ["d", "noise_removed", "over_x_floor", "sisdr_gain"]
     pd.set_option("display.width", 200)
     low = f[f.snr <= 0]
@@ -396,6 +410,13 @@ def report() -> pd.DataFrame:
     s_low["n"] = low.groupby(["tag", "cond"]).size()
     print("\nMedians at SNR <= 0 dB (output STFT):")
     print(s_low.to_string())
+    if "r_over_g" in raw.columns:
+        fg = derive(raw.dropna(subset=["r_over_g"]), "_g")
+        lowg = fg[fg.snr <= 0]
+        s_g = lowg.groupby(["tag", "cond"])[cols + ["g"]].median().round(3)
+        print("\nMedians at SNR <= 0 dB (LEVEL-ALIGNED output STFT; g = output level of the clean component):")
+        print(s_g.to_string())
+        s_g.to_csv(OUT / "summary_low_snr_levelaligned.csv")
     piv = f.pivot_table(index=["tag", "cond"], columns="snr", values="d", aggfunc="median").round(2)
     print("\nMedian d by SNR:")
     print(piv.to_string())

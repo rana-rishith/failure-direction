@@ -1,0 +1,24 @@
+# Amendment: level-aligned energy split. Committed BEFORE the re-evaluation that
+# produces the level-aligned numbers. Written AFTER the plain-split cm results
+# were seen; the paper reports that order.
+
+level_aligned_split:
+  problem: >-
+    SI-SDR training leaves the output level free. Bounded masks cannot exceed the
+    input; the unbounded complex mask settled at 1.4-2.2x the clean level
+    (src/scale_check.py, median g: cm_weather 1.78-1.81, cm_anthro 1.43-1.45,
+    cm_demand 2.21; B1/B3 0.96-0.99). The plain output-STFT split then counts the
+    extra level as energy beyond clean, giving noise_removed < 0 alongside
+    +14 to +21 dB SI-SDR gain. For level-free outputs the plain split is not a
+    valid failure measure.
+  fix: >-
+    g = <est - mean, clean - mean> / <clean - mean, clean - mean> per utterance
+    (clamped to [0.1, 10]); split computed on |STFT(est)| / g. The noisy input has
+    g ~ 1, so the passthrough floor is unchanged.
+  applies_to: "every model (B1, B3, cm), every condition; plain and level-aligned columns both kept and both reported"
+  basis_for_judgement: "U1_failure_class and U2 use the level-aligned split for all architectures"
+  unchanged: >-
+    S_stationarity was run once on the plain split (FAIL, rho -0.083). Its verdict
+    stands. A level-aligned rerun is reported only as a sensitivity analysis.
+    D2_distance and D_diversity_control involve bounded masks only (g ~ 1) and
+    stand as run.
