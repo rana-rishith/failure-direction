@@ -1,0 +1,4 @@
+arch,n_files,var_resid,share_between_files,file_resid_min,file_resid_max
+b1,60,0.0574,0.52,-0.385,0.363
+b3,60,0.3077,0.226,-0.424,0.401
+cm,60,0.1302,0.33,-0.399,0.368

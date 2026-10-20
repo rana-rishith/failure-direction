@@ -369,7 +369,9 @@ def _rung(tag, cond, nt):
         if heard is not None:
             return "R1" if nt in heard else "R4"
         if fam.startswith("loto:"):
-            return "R4_heldout" if nt == fam[5:] else "R1"
+            if nt == fam[5:]:
+                return "R4_heldout"
+            return "R1" if nt in C.WEATHER else "R4_anthro"   # anthro types were never heard by loto models
         return "R4_marine"
     if fam == "anthro" and cond == "deepship_ship":
         return "R3"

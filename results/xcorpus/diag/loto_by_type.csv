@@ -1,0 +1,7 @@
+tag,bubble_curtain,hurricane,large_commercial_ship,lightning,rainfall
+b1_loto_hurricane,0.009,-0.008,0.313,0.975,0.97
+b1_loto_lightning,-0.001,0.998,0.036,0.02,0.966
+b1_loto_rainfall,-0.004,0.998,0.323,0.972,0.409
+b3_loto_hurricane,0.004,-0.008,0.273,0.961,0.945
+b3_loto_lightning,-0.001,0.997,0.028,0.005,0.929
+b3_loto_rainfall,0.01,0.997,0.293,0.954,0.487
