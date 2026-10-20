@@ -33,6 +33,7 @@ SHIPS = ("Cargo", "Tanker", "Passengership")
 HOLDOUT = ("DLIVING", "OOFFICE", "TCAR")
 TRAIN_FRAC = 0.8
 EXT_CONDS = ["deepship_ship", "deepship_tug", "mbari_storm", "mbari_dry", "dem_A", "dem_B", "dem_H"]
+FSD_CONDS = ["fsd_eval", "fsd_weather", "fsd_boat"]       # gate XN2; built only with --fsd
 PAIRED = ["dem_A", "dem_H", "marven", "deepship_ship", "mbari_storm", "mbari_dry"]   # SGMSE order per base row
 HEARD_P, UNSEEN_P = ["dem_A", "dem_H"], ["marven", "deepship_ship", "mbari_storm", "mbari_dry"]
 
@@ -152,6 +153,9 @@ def build(a):
         "dem_B": lambda: DemandPool(a.demand, "dem_B"),
         "dem_H": lambda: DemandPool(a.demand, "dem_H"),
     }
+    for c in FSD_CONDS:
+        pools[c] = (lambda c=c: __import__("src.fsd", fromlist=["FsdPool"]).FsdPool(c))
+    conds = EXT_CONDS + (FSD_CONDS if a.fsd else [])
     # MarVEN as shipped: all test rows (the base rows are a subset)
     t = man[man.split == "test"].copy()
     if a.smoke:
@@ -164,7 +168,7 @@ def build(a):
                            clean=[str(root / p) for p in t.clean_path], src="marven"))
     mv.to_csv(parts_dir / "marven.csv", index=False)
     print(f"marven: {len(mv)} rows ({mv.base_uid.notna().sum()} base)")
-    for cond in EXT_CONDS:
+    for cond in conds:
         part = parts_dir / f"{cond}.csv"
         if part.exists() and len(pd.read_csv(part)) == len(base):
             print(f"{cond}: complete, skipped")
@@ -211,6 +215,9 @@ def tag_list():
     for p in sorted(C.CKPT.glob("*_best.pt")):
         tag = p.name[:-len("_best.pt")]
         if "smoke" in tag or tag.endswith("_old"):
+            continue
+        if not (C.CKPT / f"{tag}.pt").exists():      # training not finished (no weights-only export)
+            print(f"  skip {tag}: no final export {tag}.pt")
             continue
         if tag.split("_")[0] in ("b1", "b3", "cm"):
             tags.append(tag)
@@ -264,6 +271,57 @@ def evaluate(a):
             torch.cuda.empty_cache()
 
 
+def hp_pass(a):
+    """Low-cut SI-SDR for (cond, tag) pairs whose eval rows predate the columns.
+    Writes eval_hp/<cond>.csv (tag, uid, sisdr_lc_*, sisdr_hp100_*); resumable per (cond, tag)."""
+    import torch
+    from src import models as M
+    from src.lowcut import lowcut_sisdr
+    dev = C.device()
+    man = pd.read_csv(OUT / "manifest.csv")
+    hd = OUT / "eval_hp"
+    hd.mkdir(parents=True, exist_ok=True)
+    conds = a.conds or list(man.cond.unique())
+    for tag in a.tags:
+        model = None
+        for cond in conds:
+            rows = man[man.cond == cond]
+            ef = OUT / "eval" / f"{cond}.csv"
+            if ef.exists():
+                e = pd.read_csv(ef)
+                e = e[e.tag == tag]
+                if "sisdr_lc_out" in e.columns and len(e) == len(rows) and e.sisdr_lc_out.notna().all():
+                    continue                                  # evaluated with the columns already
+            f = hd / f"{cond}.csv"
+            old = pd.read_csv(f) if f.exists() else pd.DataFrame(columns=["tag", "uid"])
+            if (old.tag == tag).sum() == len(rows):
+                continue
+            old = old[old.tag != tag]
+            if model is None:
+                model = M.load_model(tag.split("_")[0], tag, kind="best", device=dev)
+                model.eval()
+            rec = []
+            with torch.no_grad():
+                for r in rows.itertuples():
+                    x, _ = sf.read(r.noisy, dtype="float32")
+                    y, _ = sf.read(r.clean, dtype="float32")
+                    x = x.mean(axis=1) if x.ndim > 1 else x
+                    y = y.mean(axis=1) if y.ndim > 1 else y
+                    n = min(len(x), len(y))
+                    x, y = x[:n], y[:n]
+                    est, _ = model(torch.from_numpy(x)[None].to(dev))
+                    e_ = est[0].float().cpu().numpy()
+                    rec.append(dict(tag=tag, uid=r.uid, **lowcut_sisdr(e_, x, y)))
+            out = pd.concat([old, pd.DataFrame(rec)], ignore_index=True)
+            tmp = f.with_suffix(".tmp")
+            out.to_csv(tmp, index=False)
+            os.replace(tmp, f)
+            print(f"  hp {tag} {cond}: {len(rec)} rows", flush=True)
+        del model
+        if dev == "cuda":
+            torch.cuda.empty_cache()
+
+
 # ---------------------------------------------------------- DFN3 / SGMSE ----
 def _link(src, dst):
     if dst.exists():
@@ -308,6 +366,7 @@ def _parse(name):
 
 
 def ext_score(a):
+    from src.lowcut import lowcut_sisdr
     from src.pilot_level import G_MAX, G_MIN, mag, ratios, si_sdr
     man = pd.read_csv(OUT / "manifest.csv").set_index(["cond", "uid"])
     sg = Path(a.sgmse_dir)
@@ -338,7 +397,7 @@ def ext_score(a):
             rec.append(dict(tag=model, cond=cond, uid=uid, base_uid=r.base_uid, noise_type=r.base_noise_type,
                             snr=r.snr, sisdr_in=si_sdr(x, y), sisdr_out=si_sdr(e, y), g=g,
                             r_over=ro, r_under=ru, r_add=ra, r_over_g=rog, r_under_g=rug, r_add_g=rag,
-                            r_over_b4=rob, r_under_b4=rub))
+                            r_over_b4=rob, r_under_b4=rub, **lowcut_sisdr(e, x, y)))
         pd.DataFrame(rec).to_csv(OUT / f"ext_{model}.csv", index=False)
         print(f"{model}: scored {len(rec)} outputs")
 
@@ -457,12 +516,15 @@ def report(a):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["build", "eval", "ext-prep", "ext-score", "report"])
+    ap.add_argument("cmd", choices=["build", "eval", "hp", "ext-prep", "ext-score", "report"])
     ap.add_argument("--deepship"); ap.add_argument("--mbari"); ap.add_argument("--demand"); ap.add_argument("--vbdmd")
     ap.add_argument("--sgmse-dir"); ap.add_argument("--tags", nargs="*"); ap.add_argument("--smoke", action="store_true")
+    ap.add_argument("--fsd", action="store_true", help="also build the FSD50K conditions (gate XN2)")
+    ap.add_argument("--conds", nargs="*")
     a = ap.parse_args(argv)
     OUT.mkdir(parents=True, exist_ok=True)
-    {"build": build, "eval": evaluate, "ext-prep": ext_prep, "ext-score": ext_score, "report": report}[a.cmd](a)
+    {"build": build, "eval": evaluate, "hp": hp_pass, "ext-prep": ext_prep, "ext-score": ext_score,
+     "report": report}[a.cmd](a)
 
 
 if __name__ == "__main__":

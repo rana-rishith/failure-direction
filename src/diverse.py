@@ -61,6 +61,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from src import data as D
 from src import models as M
+from src.lowcut import lowcut_sisdr
 from src.metrics import si_sdr_loss
 from src.train import load_ckpt, save_ckpt
 
@@ -221,7 +222,7 @@ def train(model_key: str, tag: str, steps: int = C.TRAIN_STEPS, bs: int = C.BATC
     df = D.load_manifest()
     pool = noise_pool(demand_index(), "dem_A", holdout)
     ds = DiverseMix(clean_paths(df, "train"), pool, seed)
-    val = build_val(df, pool, seed)
+    val = build_val(df, pool, C.SEED)   # same validation set for every seed (identical at seed 1234)
 
     last_p, best_p = C.CKPT / f"{tag}_last.pt", C.CKPT / f"{tag}_best.pt"
     if fresh:
@@ -333,7 +334,8 @@ def analyse(model, x: np.ndarray, y: np.ndarray, dev: str) -> dict:
             "r_over_i": ro_i, "r_under_i": ru_i,
             "r_over": ro_o, "r_under": ru_o, "r_add": ra_o,
             "r_over_b4": ro_b, "r_under_b4": ru_b,
-            "g": g, "r_over_g": ro_g, "r_under_g": ru_g, "r_add_g": ra_g}
+            "g": g, "r_over_g": ro_g, "r_under_g": ru_g, "r_add_g": ra_g,
+            **lowcut_sisdr(e, x, y)}
 
 
 def tag_family(tag: str) -> str | None:
@@ -472,16 +474,18 @@ def main(argv=None):
     p.add_argument("--workers", type=int, default=0)
     p.add_argument("--fresh", action="store_true")
     p.add_argument("--holdout", default=",".join(HOLDOUT))
+    p.add_argument("--seed", type=int, default=C.SEED)
+    p.add_argument("--suffix", default="", help="tag suffix for seed replicates, e.g. _s2")
     a = p.parse_args(argv)
     holdout = tuple(h.strip().upper() for h in a.holdout.split(",") if h.strip())
 
     if a.check:
         check(holdout)
     elif a.train:
-        tag = f"{a.model}_demand" + ("_smoke" if a.smoke else "")
+        tag = f"{a.model}_demand{a.suffix}" + ("_smoke" if a.smoke else "")
         steps = 500 if a.smoke else a.steps
         train(a.model, tag, steps=steps, val_every=250 if a.smoke else C.VAL_EVERY,
-              workers=a.workers, fresh=a.fresh, holdout=holdout)
+              workers=a.workers, seed=a.seed, fresh=a.fresh, holdout=holdout)
     elif a.eval:
         for t in a.eval:
             evaluate(t, holdout)

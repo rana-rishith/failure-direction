@@ -1,0 +1,74 @@
+# Gate XN2: second long run (run_overnight2.ps1). Committed BEFORE any step runs.
+# What was already seen when this was written (20 Oct 2026):
+#   - every gate-XN result (seeds, R3, xcorpus matrix of 29 checkpoints, DFN3, 20 SGMSE+ base rows)
+#   - results/xcorpus/diag (R3 per-file, family bonus: weather models beat anthro models on
+#     every external condition except DeepShip ship), and the SGMSE+ VB-DMD swap test
+#   - FSD50K label counts (ground-truth CSVs) and the clip selection in src/fsd.py
+# Nothing below has been run: no demand seed, no FSD50K-trained model, no FSD50K mixture,
+# no low-cut SI-SDR on any model output, SGMSE+ base rows 21+.
+
+provenance:
+  committed_at: "2026-10-20"
+  code: "src/fsd.py, src/lowcut.py, src/xn2.py, src/xcorpus.py (--fsd, hp), src/diverse.py (--seed/--suffix, low-cut columns)"
+
+data:
+  FSD50K:
+    selection: "src/fsd.py: EXCLUDE_VOICE never used; EXCLUDE_MARINE kept out of training and of fsd_eval"
+    train_noise: "dev split 'train', eligible clips (about 29.9k clips, 153 leaf classes), leaf class uniform then clip uniform"
+    val_noise: "dev split 'val', eligible clips; validation set fixed at seed 1234 for every seed"
+    resample: "44.1 -> 16 kHz FFT band-limited, cached once (fsd16k/)"
+    crops: "clips mean-removed, unit RMS, 10 ms fades, concatenated; random offset in the first clip"
+  new_conditions:   # 400 paired base rows each, same base rows / SNRs / mixing as gate XN
+    fsd_eval: "FSD50K eval split, eligible clips (heard classes, unheard recordings for fsd models)"
+    fsd_weather: "FSD50K eval clips labelled Rain/Raindrop/Thunder/Thunderstorm/Wind (no Boat), groups thunder/rain/wind uniform"
+    fsd_boat: "FSD50K eval clips labelled Boat_and_Water_vehicle (25 clips; descriptive only)"
+
+models:
+  demand_seeds: "b1/b3/cm _demand_s2, _s3: src.diverse, seed 2/3, otherwise identical to the seed-1234 models"
+  fsd: "b1/b3/cm _fsd (seed 1234), _fsd_s2, _fsd_s3: src.fsd, same architectures, protocol (20k steps, bs 8, lr 2e-4, 4 s crops, SI-SDR loss) and MarVEN train-split speech"
+  order: "demand_s2 -> fsd smoke -> fsd s1234 -> fsd s2 -> demand s3 -> fsd s3; a training is skipped when less than the evaluation + SGMSE reserve remains"
+
+metric: "src.diverse.analyse, level-aligned split (nr_g, d_g) primary for every gate below; plain columns and SI-SDR reported"
+
+gates:
+  D_fsd:
+    question: "does FSD50K-scale training diversity make the same small architectures active on unseen marine noise? (gate D with DEMAND was PARTIAL)"
+    data: "MarVEN test rows (all five types unseen for fsd models), SNR <= 0, xcorpus eval"
+    unit: "architecture; median over its available fsd seeds of the per-seed median"
+    verdict:
+      diversity_explains: "median d_g > 0 AND median nr_g >= 0.5"
+      architecture_explains: "median d_g < 0 AND median nr_g < 0.3"
+      otherwise: "partial"
+    claim: "class shared by >= 2 of 3 architectures, else 'mixed'"
+  H_FD_widening:
+    statistic: "per architecture, seed-mean of median nr_g on MarVEN SNR <= 0: fsd minus demand"
+    verdict: ">= +0.10 'widens', <= -0.10 'narrows', else 'no_change'"
+    claim: "class shared by >= 2 of 3 architectures, else 'mixed'"
+  H_D2_demand_seeds:
+    statistic: "gate-D class (rule above) of each demand seed (1234, 2, 3), per architecture"
+    verdict: "'stable' if all available seeds share the class, else 'seed_sensitive'"
+  H_F_family_fresh:
+    question: "does the training family transfer to FRESH real weather recordings, beyond the weather models' general breadth?"
+    why_differenced: "xcorpus already showed weather models beat anthro models on most external noise; the general-noise bonus is subtracted"
+    statistic: "per (arch, seed) pair: E = [nr_g(weather) - nr_g(anthro)] on fsd_weather minus the same on fsd_eval; medians over all rows of each condition"
+    verdict:
+      family_specific: "E >= 0.10 in >= 7 of 9 pairs"
+      not_family_specific: "E < 0.10 in >= 7 of 9 pairs"
+      otherwise: "mixed"
+    descriptive: "same differenced bonus with anthro - weather on fsd_boat (25 clips)"
+  C1_lowcut:
+    question: "does the Claim 1 generalisation gap survive removing sub-100 Hz content from SI-SDR?"
+    data: "MarVEN test rows; b1/b3/cm x anthro/weather, seed 1234 (6 cells)"
+    statistic: "gap = median sisdr gain on heard-family rows - median on unseen-family rows; full band vs hp100 (below 100 Hz removed from estimate and reference)"
+    verdict: "'robust' if gap_hp100 >= 0.75 * gap_full in all 6 cells; 'partly' if in >= 4; else 'sub100_dependent'"
+  H_P_final:
+    rule: "gate XN H_P1 / H_P2 unchanged (paired base rows, |delta| >= 0.20 shifts, < 0.10 model trait, SGMSE needs >= 40)"
+    when: "computed once, at the end of this run, on every complete paired base row"
+    dfn3: "no longer provisional: DFN3 trains on DNS4, whose noise set includes DEMAND (Reddy et al. 2020; DNS-Challenge noise licences)"
+    added_descriptive: "same deltas on sisdr_hp100 gain; VB-DMD row descriptive only (swap test: sub-100 Hz VB-DMD noise)"
+
+descriptive:   # no verdicts
+  - "fsd models on fsd_eval (heard classes) vs fsd_weather / fsd_boat (excluded classes) vs MarVEN"
+  - "full xcorpus matrix with the new checkpoints and conditions, nr_g / d_g / SI-SDR / hp100 SI-SDR"
+  - "DFN3 on the FSD50K conditions"
+  - "per-type MarVEN table for demand and fsd models (bubble_curtain especially)"
