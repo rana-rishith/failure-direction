@@ -371,6 +371,8 @@ def ext_score(a):
     man = pd.read_csv(OUT / "manifest.csv").set_index(["cond", "uid"])
     sg = Path(a.sgmse_dir)
     for model, d in (("dfn3", "xc_dfn_out"), ("sgmse", "xc_sg_out")):
+        if a.models and model not in a.models:
+            continue
         files = sorted((sg / d).glob("*.wav"))
         if not files:
             print(f"{model}: no outputs")
@@ -521,6 +523,7 @@ def main(argv=None):
     ap.add_argument("--sgmse-dir"); ap.add_argument("--tags", nargs="*"); ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--fsd", action="store_true", help="also build the FSD50K conditions (gate XN2)")
     ap.add_argument("--conds", nargs="*")
+    ap.add_argument("--models", nargs="*", help="ext-score: only these (dfn3, sgmse); others keep their CSV")
     a = ap.parse_args(argv)
     OUT.mkdir(parents=True, exist_ok=True)
     {"build": build, "eval": evaluate, "hp": hp_pass, "ext-prep": ext_prep, "ext-score": ext_score,
