@@ -90,18 +90,18 @@ vbdmd_test     0.894  0.299  0.947       8.911       2.085
 
 ## H_P_final: sgmse
 
-model  paired_base_rows  H_P1_delta         H_P1  H_P2_delta         H_P2  hp100_gain_desc_delta  gain_desc_delta
-sgmse                25      -0.248 underpowered       -0.03 underpowered                  1.181           -3.156
+model  paired_base_rows  H_P1_delta                H_P1  H_P2_delta        H_P2  hp100_gain_desc_delta  gain_desc_delta
+sgmse                40      -0.233 shifts_with_novelty      -0.032 model_trait                  1.067           -1.794
 
                 nr_g    d_g      g  sisdr_gain  gain_hp100
 cond                                                      
-deepship_ship  0.869 -0.041  0.920       3.624       3.388
-dem_A          0.886  0.287  0.953       8.737       2.463
-dem_H          0.923  0.244  0.949      11.075       2.443
-marven         0.939  0.178  0.956       6.792       5.427
-mbari_dry      0.853  0.130  0.937       8.053       3.115
-mbari_storm    0.875 -0.056  0.926       5.719       4.044
-vbdmd_test     0.913  0.511  0.989       1.390       3.380
+deepship_ship  0.867 -0.052  0.926       4.981       3.544
+dem_A          0.915  0.341  0.957       8.235       3.542
+dem_H          0.910  0.298  0.951       9.878       2.443
+marven         0.928  0.168  0.954       6.792       5.427
+mbari_dry      0.843  0.182  0.936       8.348       3.272
+mbari_storm    0.876  0.096  0.929       6.949       4.689
+vbdmd_test     0.914  0.478  0.989       1.380       3.542
 
 ## Matrix (seed mean): nr_g
 
