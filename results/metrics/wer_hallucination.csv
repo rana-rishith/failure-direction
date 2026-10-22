@@ -1,0 +1,4 @@
+arm,hyp_ref_median,over_2x,n,insertion_pct
+noisy,1.0,1,818,2.49
+b1_matched,1.0,0,818,1.9
+b1_unseen,1.0,2,818,3.23
