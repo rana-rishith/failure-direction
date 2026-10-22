@@ -72,3 +72,6 @@ results/confound/_preDC/
 results/labels_dc_included/
 results_dc_included/
 results_preDC_*/
+
+env.ps1
+results/_xc_smoke/
