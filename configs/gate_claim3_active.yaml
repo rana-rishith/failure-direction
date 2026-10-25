@@ -1,0 +1,75 @@
+# Pre-committed rule: Claim 3 (pre-hoc prediction of speech loss) on ACTIVE models.
+# Code: src/labels_active.py, src/dfn_marven.py, src/claim3_active.py, run_claim3_active.ps1.
+#
+# Written 26 Oct 2026, BEFORE any Claim 3 label, feature join or prediction existed for
+# these models. What had been seen beforehand: per-type and per-SNR medians of d_g and
+# nr_g for the FSD-trained models and DFN3 on the 400-row xcorpus MarVEN subset
+# (gate XN2). No per-utterance speech-loss target over the Claim 3 rows had been
+# computed for any of these models.
+
+C3_active:
+  question: >
+    Once an enhancer stays active on unseen noise, can its per-utterance speech loss
+    still be predicted from the noisy input alone, better than oracle SNR + log energy?
+  why: >
+    Decides the paper framing. Claim 3 so far holds only for MarVEN-trained B1, whose
+    "unseen" behaviour is mostly inert. The candidate universal claim (training-noise
+    diversity sets whether a model is active; once active, the input sets how it fails)
+    needs prediction to hold on models that are active on MarVEN.
+
+  models:
+    primary: [b1_fsd, b3_fsd, cm_fsd, dfn3]       # FSD50K-trained seed 1234, and DFN3 zero-shot
+    robustness: [b1_fsd_s2, b1_fsd_s3, b3_fsd_s2, b3_fsd_s3, cm_fsd_s2, cm_fsd_s3]
+    checkpoints: "<tag>_best.pt, as in src.xcorpus"
+    note: "All five MarVEN noise types are unseen for every model listed (FSD50K training excluded rain, thunder, wind, water and boat labels; DFN3 is zero-shot)."
+
+  rows: >
+    Every row of train / val / test_matched in both folds (22,754), unchanged from
+    src.claim3. The fold now only defines the predictor's train/test split by speaker;
+    it no longer says which noise the enhancer heard.
+
+  target: >
+    level (PRIMARY, the only verdict target): log10 e_over_lv / e_clean, the
+    level-aligned output split, bins >= DECOMP_MIN_HZ, exactly as src.labels_level.
+    Computed from the output waveform, so the same definition covers bounded masks,
+    the complex mask and DFN3.
+
+  predictor: "unchanged src.claim3: same features, arms (baseline / full / feats_only), LightGBM settings, seed, within-SNR and within-cell analysis, bootstrap"
+
+  harness_check:
+    rule: >
+      Before any active-model label is computed, the new waveform labeller run on
+      b1_weather, weather val, must reproduce results/labels_level/b1__weather__val.csv:
+      median |relative difference| of e_over_lv < 1e-4 and Spearman(y_new, y_old) > 0.9999.
+    on_fail: "stop; no active-model labels are computed until fixed"
+
+  pass_per_model_fold:              # identical to gate_claim3_level.yaml
+    - "feats_only beats baseline in mean within-SNR Spearman AND in >= 6 of 8 SNR strata"
+    - "feats_only beats baseline in >= 75% of noise_type x SNR cells (n >= 25)"
+  pass_per_model: "passes in BOTH folds"
+
+  verdict:
+    HOLDS_ACTIVE: "dfn3 passes AND at least 2 of {b1_fsd, b3_fsd, cm_fsd} pass"
+    PARTIAL: "exactly one of the two conditions above holds (report which)"
+    FAILS: "neither holds"
+
+  dfn3_completeness: >
+    DFN3 is run on all 22,754 rows. Rows whose DFN3 output failed are dropped and
+    counted. If more than 1% of rows in any (fold, split) are missing, DFN3 counts as
+    NOT passing. No subsampling is chosen after the fact.
+
+  robustness_seeds: >
+    Descriptive. Report, per FSD architecture, how many of its 3 seeds pass. If the
+    seed-1234 result disagrees with the majority of its 3 seeds, flag the architecture
+    as seed_sensitive in the report. This cannot change the verdict.
+
+  descriptive_only:
+    - "per noise type: share of SNR cells where feats_only beats baseline"
+    - "AUC top-decile margins"
+    - "cross-model agreement: Spearman of the level target between models within noise_type x SNR cells on test_matched, including MarVEN-trained b1 (labels_level) as reference"
+    - "DFN3 and FSD-model outputs: g, SI-SDR in/out"
+
+  on_result:
+    HOLDS_ACTIVE: "the reframed universal claim (paper Option A) stands"
+    PARTIAL: "state the claim for the model class that passes only"
+    FAILS: "paper scales back to 'diversity sets transfer' (Option C); Claim 3 reported as holding for MarVEN-trained models only"
