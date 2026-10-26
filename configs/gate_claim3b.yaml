@@ -1,0 +1,57 @@
+# Pre-committed rule: Claim 3b, burst features for bubble-curtain failure.
+# Code: src/features_burst.py, src/claim3b.py, run_claim3b.ps1.
+#
+# Written 26 Oct 2026, AFTER gate C3_active returned FAILS (commit 0c296e0) and
+# BEFORE any model was fitted with the burst features, and before the held-out
+# seed-4 and seed-5 models were trained.
+#
+# What had been seen: the full C3_active report (per model, fold, noise type and
+# cell), and label_stability.py (results/label_stability): within each FSD
+# architecture, seeds agree on the level target in every noise type (median
+# within-cell Spearman 0.77-0.85; bubble_curtain 0.85). Bubble-curtain failure is
+# therefore a stable property of the input that the 33 features do not capture.
+# Claim 3 (C3_active) stays reported as FAILS; this gate does not revise it.
+
+C3b:
+  question: >
+    With 12 reference-free burst features added (fixed in src/features_burst.py
+    before any fit), does per-utterance speech loss become predictable from the
+    noisy input for all five noise types, including bubble_curtain, on enhancer
+    seeds that did not exist when this gate was written?
+
+  models:
+    heldout: [b1_fsd_s4, b1_fsd_s5, b3_fsd_s4, b3_fsd_s5, cm_fsd_s4, cm_fsd_s5]
+    training: "src.fsd train --model <arch> --seed <4|5> --suffix _s<4|5>; unchanged FSD50K protocol"
+    dev_descriptive: "seeds 1-3 of each FSD architecture and DFN3; their Claim 3 result was seen, so they never enter the verdict"
+
+  rows: "all 22,754 rows, folds and splits unchanged from C3_active"
+  target: "level: log10 e_over_lv / e_clean, exactly as C3_active (src.labels_active)"
+  noise_types: "all five; none excluded (label_stability verdict STABLE for all)"
+
+  predictor: >
+    unchanged src.claim3 (arms, LightGBM settings, seed, within-SNR and within-cell
+    analysis, bootstrap). Feature set = the 33 of src.features + the 12 of
+    src.features_burst. Baseline arm unchanged (snr, log_e_noisy). No feature is
+    added, removed or retuned after this commit.
+
+  pass_per_model:
+    rule_a: "feats_only beats baseline in mean within-SNR Spearman AND in >= 6 of 8 SNR strata, in BOTH folds"
+    rule_b: "feats_only beats baseline in >= 75% of noise_type x SNR cells (n >= 25), in BOTH folds"
+    rule_c: "anthro fold: feats_only beats baseline in >= 6 of 8 bubble_curtain SNR cells"
+    model_passes: "rule_a AND rule_b AND rule_c"
+
+  verdict:
+    HOLDS: ">= 4 of the 6 held-out models pass AND every architecture has at least one passing seed"
+    PARTIAL: "2 or 3 held-out models pass, or >= 4 pass but one architecture has none (report which)"
+    FAILS: "0 or 1 held-out models pass"
+
+  descriptive_only:
+    - "dev run on seeds 1-3 and DFN3"
+    - "per noise type share of SNR cells won"
+    - "burst features among the full-arm top-12 importances"
+    - "AUC top-decile margins"
+
+  on_result:
+    HOLDS: "paper: Claim 3 as pre-registered fails; the bubble-curtain gap is a feature-coverage gap, closed by burst features (confirmed on held-out seeds)"
+    PARTIAL: "report for the architectures that pass only"
+    FAILS: "paper: input-side prediction of speech loss holds for weather and ship noise only; bubble-curtain failure is stable but not predicted by the features tested"
