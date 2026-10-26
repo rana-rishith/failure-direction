@@ -1,0 +1,66 @@
+# Pre-committed rule: Claim 3c, reference-free prediction of speech loss on weather noise.
+# Code: src/claim3c.py, run_claim3c.ps1 (reuse src.claim3b unchanged).
+#
+# Written 26 Oct 2026, AFTER gate C3b returned FAILS (commit f42514c) and BEFORE the
+# seed-6 and seed-7 enhancers were trained. No label, feature join or prediction
+# exists for any model named below.
+#
+# What had been seen, and why this claim is narrower than C3b:
+#   - C3b held-out (seeds 4, 5): 1 of 6 models passed. All 6 passed rules a and b in
+#     the weather fold; the anthro fold failed (rule b met by 1 of 6, rule c on
+#     bubble_curtain by 2 of 6, both b1 seeds).
+#   - C3b dev (seeds 1-3 of b1_fsd, b3_fsd, cm_fsd): all 9 passed rules a and b in the
+#     weather fold. DFN3 failed rule b in the weather fold (cells won 0.708).
+#   So the weather-fold pattern has been seen in 15 of 15 FSD-trained models. This
+#   gate is a confirmatory replication of that pattern on enhancers that do not exist
+#   yet. It was motivated by C3b and must be reported as such. C3 (C3_active) and C3b
+#   stay reported as FAILS; this gate does not revise either.
+#
+# The full arm is not used for any verdict: it contains oracle snr, so it is not
+# reference-free (src/claim3.py).
+
+C3c:
+  question: >
+    For weather noise (rainfall, lightning, hurricane), can per-utterance speech loss
+    be predicted from the noisy input alone, better than oracle SNR + log energy, on
+    FSD-trained enhancer seeds that did not exist when this gate was written?
+
+  models:
+    heldout: [b1_fsd_s6, b1_fsd_s7, b3_fsd_s6, b3_fsd_s7, cm_fsd_s6, cm_fsd_s7]
+    training: "src.fsd train --model <arch> --seed <6|7> --suffix _s<6|7>; unchanged FSD50K protocol, identical to C3b seeds 4 and 5"
+    excluded: "DFN3 (single zero-shot model, no new seeds possible; failed weather rule b in the C3b dev run). The claim is scoped to the FSD-trained architectures."
+
+  rows: "all 22,754 rows, folds and splits unchanged from C3_active and C3b"
+  target: "level: log10 e_over_lv / e_clean, exactly as C3_active (src.labels_active)"
+  verdict_fold: weather            # rainfall, lightning, hurricane
+  noise_types_in_verdict: [rainfall, lightning, hurricane]
+
+  predictor: >
+    unchanged src.claim3 via src.claim3b: same 45 reference-free features (33 of
+    src.features + 12 of src.features_burst), same arms, LightGBM settings, seed,
+    within-SNR and within-cell analysis, bootstrap. Baseline arm unchanged (snr,
+    log_e_noisy). Verdict arm: feats_only. Nothing is added, removed or retuned
+    after this commit.
+
+  pass_per_model:                  # weather fold only; thresholds identical to C3b
+    rule_a: "feats_only beats baseline in mean within-SNR Spearman AND in >= 6 of 8 SNR strata"
+    rule_b: "feats_only beats baseline in >= 75% of noise_type x SNR cells (n >= 25)"
+    rule_t: "mean d_rho (feats_only - baseline) over SNR cells > 0 within EACH of rainfall, lightning, hurricane"
+    model_passes: "rule_a AND rule_b AND rule_t"
+
+  verdict:                         # tally identical to C3b
+    HOLDS: ">= 4 of the 6 held-out models pass AND every architecture has at least one passing seed"
+    PARTIAL: "2 or 3 held-out models pass, or >= 4 pass but one architecture has none (report which)"
+    FAILS: "0 or 1 held-out models pass"
+
+  descriptive_only:
+    - "anthro fold for the same 6 models: rules a, b, c (bubble_curtain) exactly as C3b"
+    - "per noise type share of SNR cells won, both folds"
+    - "full-arm margins, labelled oracle-assisted"
+    - "AUC top-decile margins"
+    - "burst features among the full-arm top-12 importances"
+
+  on_result:
+    HOLDS: "paper: reference-free prediction of speech loss holds for weather noise on FSD-trained enhancers, replicated on unseen seeds (C3c); it does not hold for anthropogenic noise (C3b FAILS, bubble_curtain); Claim 3 as first pre-registered fails (C3_active)"
+    PARTIAL: "report for the architectures that pass only"
+    FAILS: "paper: no pre-registered form of Claim 3 holds; report per-type descriptive results only"
