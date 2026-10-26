@@ -1,0 +1,6 @@
+noise_type,median,frac_pos,cells,verdict
+bubble_curtain,0.846960203539151,1.0,72,STABLE
+hurricane,0.8266510812390416,1.0,72,STABLE
+large_commercial_ship,0.7686260400020374,0.9861111111111112,72,STABLE
+lightning,0.8336732895167586,1.0,72,STABLE
+rainfall,0.7720058986959779,1.0,72,STABLE

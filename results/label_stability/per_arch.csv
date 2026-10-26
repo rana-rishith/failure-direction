@@ -1,0 +1,16 @@
+noise_type,arch,median,frac_pos,cells
+bubble_curtain,b1_fsd,0.8585445037952203,1.0,24
+bubble_curtain,b3_fsd,0.8405499111300097,1.0,24
+bubble_curtain,cm_fsd,0.8720779220779222,1.0,24
+hurricane,b1_fsd,0.8334867135077759,1.0,24
+hurricane,b3_fsd,0.769788920145926,1.0,24
+hurricane,cm_fsd,0.8777711806013692,1.0,24
+large_commercial_ship,b1_fsd,0.7824322925579124,1.0,24
+large_commercial_ship,b3_fsd,0.723362946400413,0.9583333333333334,24
+large_commercial_ship,cm_fsd,0.7893886565731527,1.0,24
+lightning,b1_fsd,0.8280398765697549,1.0,24
+lightning,b3_fsd,0.8223699211005713,1.0,24
+lightning,cm_fsd,0.883313325330132,1.0,24
+rainfall,b1_fsd,0.7357747223691167,1.0,24
+rainfall,b3_fsd,0.7654852988554656,1.0,24
+rainfall,cm_fsd,0.8130538131127621,1.0,24
