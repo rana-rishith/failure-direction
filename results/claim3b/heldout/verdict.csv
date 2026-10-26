@@ -1,0 +1,13 @@
+tag,fold,mean_within_snr_rho_featsonly,mean_within_snr_rho_baseline,snr_strata_won,snr_strata,cells_won_frac,cells,auc_top10_featsonly_minus_baseline,rule_a,rule_b,pass,bubble_cells_won,bubble_cells,rule_c
+b1_fsd_s4,weather,0.724,0.17675000000000002,8,8,0.875,24,0.0517,True,True,True,,,
+b1_fsd_s4,anthro,0.56275,0.35925,7,8,0.9375,16,0.0046,True,True,True,7.0,8.0,True
+b1_fsd_s5,weather,0.732625,0.17712499999999998,8,8,0.9583333333333334,24,0.0469,True,True,True,,,
+b1_fsd_s5,anthro,0.5393749999999999,0.36225,7,8,0.6875,16,0.006,True,False,False,6.0,8.0,True
+b3_fsd_s4,weather,0.7586250000000001,0.137375,8,8,1.0,24,0.0777,True,True,True,,,
+b3_fsd_s4,anthro,0.47575,0.44775,6,8,0.6875,16,0.0196,True,False,False,3.0,8.0,False
+b3_fsd_s5,weather,0.7345,0.18087499999999998,8,8,0.9166666666666666,24,0.0694,True,True,True,,,
+b3_fsd_s5,anthro,0.46950000000000003,0.43625,4,8,0.5,16,0.009,False,False,False,1.0,8.0,False
+cm_fsd_s4,weather,0.745375,0.15750000000000003,8,8,1.0,24,0.0623,True,True,True,,,
+cm_fsd_s4,anthro,0.36887499999999995,0.33275,6,8,0.6875,16,0.0085,True,False,False,5.0,8.0,False
+cm_fsd_s5,weather,0.735125,0.164875,8,8,1.0,24,0.0535,True,True,True,,,
+cm_fsd_s5,anthro,0.40037500000000004,0.352,5,8,0.5,16,0.0036,False,False,False,4.0,8.0,False
