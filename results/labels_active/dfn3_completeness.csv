@@ -1,0 +1,7 @@
+fold,split,n,scored,missing,missing_frac
+weather,train,10973,10973,0,0.0
+weather,val,1353,1353,0,0.0
+weather,test_matched,1363,1363,0,0.0
+anthro,train,7203,7203,0,0.0
+anthro,val,945,945,0,0.0
+anthro,test_matched,917,917,0,0.0
