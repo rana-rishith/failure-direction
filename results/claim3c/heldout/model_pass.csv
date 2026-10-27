@@ -1,0 +1,7 @@
+tag,rule_a,rule_b,rule_t,pass
+b1_fsd_s6,True,True,True,True
+b1_fsd_s7,True,True,True,True
+b3_fsd_s6,True,True,True,True
+b3_fsd_s7,True,True,True,True
+cm_fsd_s6,True,True,True,True
+cm_fsd_s7,True,True,True,True
