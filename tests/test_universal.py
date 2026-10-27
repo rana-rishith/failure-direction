@@ -5,6 +5,9 @@ that can silently drift. These expected values are the yaml's own, read off
 configs/gate_universal.yaml at commit 29c1566.
 """
 
+import argparse
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -18,10 +21,12 @@ def cfg():
 
 
 def test_thresholds_parsed_from_yaml(cfg):
-    assert U._nums(cfg["U1_novelty_monotone"]["pass_arch_if"])[0] == 3          # >= 3 of 4 levels
-    assert U._nums(cfg["U1_failure_class"]["classes"]["inert"])[0] == 0.30      # nr < 0.30
-    assert U._nums(cfg["U1_failure_class"]["classes"]["hallucinate"])[0] == 0.05
-    assert U._nums(cfg["U3_within_condition"]["pass_if"][1])[0] / 100 == 0.75
+    assert U._after(cfg["U1_novelty_monotone"]["pass_arch_if"], ">=") == 3      # >= 3 of 4 levels
+    assert U._after(cfg["U1_failure_class"]["classes"]["inert"], "<") == 0.30   # nr < 0.30
+    assert U._after(cfg["U1_failure_class"]["classes"]["hallucinate"], ">=") == 0.05
+    assert U._after(cfg["U3_within_condition"]["pass_if"][1], ">=") / 100 == 0.75
+    # the 1 in "U1_novelty_monotone" must not be read as the threshold
+    assert U._after(cfg["U2_beyond_bounded"]["pass_if"], ">=") == 2
     assert cfg["definitions"]["snr_low"] == [-15, -10, -5, 0]
     assert cfg["provenance"]["commit"] == "29c1566"
 
@@ -59,6 +64,55 @@ def test_derive_matches_the_yaml_definitions():
     assert d.nr == pytest.approx(1 - 0.1 / 0.5)
     assert d.r_over_x == pytest.approx(0.4 - 0.3)
     assert d.r_add == pytest.approx(0.02)
+
+
+def _seg_csvs(root, arch, d_by_rung):
+    """Minimal segment CSVs for one arch: the columns u1_rows keeps, both folds."""
+    import config as C
+    ratios = {"A": d_by_rung["R1"], "B": d_by_rung["R2"], "U": d_by_rung["R4"]}
+    for fold in C.FAMILIES:
+        for name, halves in (("windows", ("A", "B")), ("unseen", ("U",))):
+            rec = []
+            for snr in (-15, -10, -5, 0):
+                for h in halves:
+                    ro, ru = ratios[h]
+                    rec.append({"uid": f"1-1-0001_{h}{snr}", "noise_type": "rainfall",
+                                "snr": snr, "half": h, "r_over_g_seg": ro,
+                                "r_under_g_seg": ru, "r_add_g_seg": 0.01,
+                                "r_over_b4_seg": 0.3, "r_under_b4_seg": 0.5})
+            pd.DataFrame(rec).to_csv(root / f"{arch}_seg_{fold}__{name}.csv", index=False)
+
+
+def test_u2_refuses_a_verdict_while_arms_are_missing(cfg, tmp_path, monkeypatch):
+    """A class with no rows is an unmeasured arm, not a failing one, so no verdict file
+    may be written while fewer than two classes have data."""
+    monkeypatch.setattr(U, "SEG", tmp_path)
+    monkeypatch.setattr(U, "OUT", tmp_path / "out")
+    args = argparse.Namespace(allow_cpu=False, force=True, no_resume=False, tag="b1_weather")
+
+    with pytest.raises(SystemExit) as none_ready:
+        U.stage_u2(cfg, "sha", args)
+    assert "needs 2 of 3" in str(none_ready.value)
+
+    _seg_csvs(tmp_path, "cm", {"R1": (0.4, 0.1), "R2": (0.2, 0.2), "R4": (0.1, 0.4)})
+    with pytest.raises(SystemExit) as one_ready:
+        U.stage_u2(cfg, "sha", args)
+    assert "has 1" in str(one_ready.value) and "dfn3" in str(one_ready.value)
+    assert not (tmp_path / "out" / "u2_verdict.json").exists()
+
+
+def test_u2_scores_the_classes_it_has(cfg, tmp_path, monkeypatch):
+    monkeypatch.setattr(U, "SEG", tmp_path)
+    monkeypatch.setattr(U, "OUT", tmp_path / "out")
+    args = argparse.Namespace(allow_cpu=False, force=True, no_resume=False, tag="b1_weather")
+    _seg_csvs(tmp_path, "cm", {"R1": (0.4, 0.1), "R2": (0.2, 0.2), "R4": (0.1, 0.4)})
+    _seg_csvs(tmp_path, "dfn3", {"R1": (0.2, 0.2), "R2": (0.2, 0.2), "R4": (0.2, 0.2)})
+
+    U.stage_u2(cfg, "sha", args)
+    v = json.loads((tmp_path / "out" / "u2_verdict.json").read_text())
+    assert v["notes"]["class_pass"] == {"complex_mask": True, "diverse_pretrained": False}
+    assert v["thresholds"]["min_classes"] == 2
+    assert v["verdict"] == "FAIL"          # one passing class is not two
 
 
 def test_ext_metrics_passthrough_is_the_b4_floor():
