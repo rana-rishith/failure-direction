@@ -66,8 +66,15 @@ def _git(*args) -> str:
 
 def code_commit() -> str:
     """Dirty is recorded, not blocked: the paper's claim is that the code hash predates
-    the result, and a run from an uncommitted tree must say so in its own verdict."""
-    return _git("rev-parse", "HEAD") + ("+dirty" if _git("status", "--porcelain") else "")
+    the result, and a run from an uncommitted tree must say so in its own verdict.
+    Only TRACKED edits count as dirty; untracked files are listed instead, because the
+    paper sources live untracked here and cannot change a result."""
+    tracked = _git("status", "--porcelain", "--untracked-files=no")
+    return _git("rev-parse", "HEAD") + ("+dirty" if tracked else "")
+
+
+def untracked_files() -> list[str]:
+    return _git("ls-files", "--others", "--exclude-standard").splitlines()
 
 
 def write_verdict(gate_id: str, cfg: dict, sha: str, thresholds: dict,
@@ -80,6 +87,7 @@ def write_verdict(gate_id: str, cfg: dict, sha: str, thresholds: dict,
          "config_committed_at": cfg["provenance"]["committed_at"],
          "config_sha256_12": sha,
          "code_commit": code_commit(),
+         "untracked_files": untracked_files(),
          "run_at": dt.datetime.now().isoformat(timespec="seconds"),
          "thresholds": thresholds,
          "notes": notes,
