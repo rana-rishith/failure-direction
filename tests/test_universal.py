@@ -5,6 +5,7 @@ that can silently drift. These expected values are the yaml's own, read off
 configs/gate_universal.yaml at commit 29c1566.
 """
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -58,6 +59,28 @@ def test_derive_matches_the_yaml_definitions():
     assert d.nr == pytest.approx(1 - 0.1 / 0.5)
     assert d.r_over_x == pytest.approx(0.4 - 0.3)
     assert d.r_add == pytest.approx(0.02)
+
+
+def test_ext_metrics_passthrough_is_the_b4_floor():
+    """A file-based enhancer that returns its input must land exactly on the passthrough
+    floor, and one that returns the clean signal must sit at gain 1 with no excess."""
+    from src import segment as S
+    rng = np.random.default_rng(0)
+    y = rng.standard_normal(S.C.SR).astype("float32")
+    x = (y + 0.5 * rng.standard_normal(S.C.SR)).astype("float32")
+
+    thru = S.ext_metrics(x, y, x)
+    assert thru["r_over"] == pytest.approx(thru["r_over_b4"])
+    assert thru["r_under"] == pytest.approx(thru["r_under_b4"])
+    assert thru["r_add"] == pytest.approx(0.0)
+    assert thru["g"] == pytest.approx(1.0, abs=0.05)
+
+    ideal = S.ext_metrics(x, y, y)
+    assert ideal["g"] == pytest.approx(1.0, abs=1e-6)
+    assert ideal["r_over"] == pytest.approx(0.0) and ideal["r_under"] == pytest.approx(0.0)
+
+    short = S.ext_metrics(x, y, x[:-200])        # a trimmed output is padded, not rejected
+    assert np.isfinite(list(short.values())).all()
 
 
 def test_unseen_window_covers_the_whole_utterance():
