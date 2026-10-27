@@ -169,7 +169,21 @@ def u1_verdict(rows: pd.DataFrame, archs, cfg: dict) -> tuple[list[dict], dict, 
     return cells, arch_pass, thresholds
 
 
+def require_cuda(a) -> None:
+    """U1 trains four models: about 40 min each on the 4060, about 6 h each on the CPU.
+    The guard lives here, not in a shell pre-flight line, because PowerShell runs the
+    next line of a pasted block even after the previous one failed."""
+    import torch
+    if torch.cuda.is_available() or a.allow_cpu:
+        return
+    raise SystemExit(
+        "no CUDA device: torch.cuda.is_available() is False. Check that nvidia-smi sees "
+        "the GPU, then rerun. Pass --allow-cpu to train on the CPU on purpose (about 25 h "
+        "for the four models).")
+
+
 def stage_u1(cfg: dict, sha: str, a) -> None:
+    require_cuda(a)
     from src import segment as S
     steps = yaml.safe_load(SEG_GATE_PATH.read_text(encoding="utf-8"))["segment"]["steps"]
     for arch in ARCHS:
@@ -379,6 +393,8 @@ def main(argv=None) -> None:
     p.add_argument("--no-resume", action="store_true",
                    help="retrain checkpoints and re-extract caches instead of reusing them")
     p.add_argument("--tag", default="b1_weather", help="U3 enhancer whose r_over_x is the label")
+    p.add_argument("--allow-cpu", action="store_true",
+                   help="let U1 train on the CPU (about 25 h for the four models)")
     a = p.parse_args(argv)
     cfg, sha = load_gate()
     for gate in (ORDER if a.gate == "all" else [a.gate]):
