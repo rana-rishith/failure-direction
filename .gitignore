@@ -75,3 +75,12 @@ results_preDC_*/
 
 env.ps1
 results/_xc_smoke/
+
+# per-utterance Claim 3 outputs (regenerable; summary tables are committed)
+results/labels_active/_chunks/
+results/labels_active/*__*.csv
+results/labels_active/rows_dfn.csv
+results/features_burst/
+results/claim3_active/*/predictions/
+results/claim3b/*/*/predictions/
+results/claim3c/*/*/predictions/
