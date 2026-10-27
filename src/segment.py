@@ -40,6 +40,8 @@ Usage, from the repo root, after env.ps1:
     python -m src.segment --model b1 --fold weather     # also cm
     python -m src.segment --model b3 --fold anthro
     python -m src.segment --report
+    python -m src.segment --fold weather --export-windows D       # file-based enhancer (U2)
+    python -m src.segment --fold weather --score-windows D --tag dfn3
 """
 from __future__ import annotations
 
@@ -255,6 +257,105 @@ def ensure_windows(arch: str, fold_name: str, steps: int, limit=None, sfx: str =
     return matched, unseen
 
 
+# ------------------------------------------- file-based enhancers (U2) ----
+def _windows(fold_name: str, limit=None):
+    """The exact windows evaluate_windows() scores, as (row, half, start, noisy, clean):
+    A/B halves of test_matched, one window per test_unseen utterance."""
+    df = D.load_manifest()
+    fold = seg_fold(df, fold_name)
+    for frame, halves in ((fold["test_matched"], HALVES),
+                          (attach_full_window(fold["test_unseen"]), ("U",))):
+        if limit:
+            frame = frame.sample(n=min(limit, len(frame)), random_state=0).reset_index(drop=True)
+        for r in frame.itertuples():
+            x, y = D.read_pair(r)
+            for h in halves:
+                ranges = getattr(r, f"seg_{h}")
+                if not ranges:
+                    continue
+                s = min(centre_start(ranges, len(x)), len(x) - WIN)
+                yield r, h, s, np.ascontiguousarray(x[s:s + WIN]), np.ascontiguousarray(y[s:s + WIN])
+
+
+def export_windows(fold_name: str, out_dir: Path, limit=None) -> int:
+    """Write each window's noisy audio for an enhancer that runs as a separate process
+    (DFN3, SGMSE+). Clean is not written: `start` is in the file name, so score_windows
+    slices the same window out of the manifest's own clean file."""
+    import soundfile as sf
+    d = Path(out_dir)
+    d.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for r, h, s, x, _ in _windows(fold_name, limit):
+        p = d / f"{h}__{s}__{r.uid}.wav"
+        if not p.exists():
+            sf.write(str(p), x, C.SR, subtype="FLOAT")
+        n += 1
+    print(f"{n} windows -> {d}")
+    return n
+
+
+def ext_metrics(x: np.ndarray, y: np.ndarray, e: np.ndarray) -> dict:
+    """Output-STFT energy split of one enhanced window, in src.diverse.analyse's basis
+    and column names, via the numpy STFT in src.pilot_level (the same composition
+    src.xcorpus.ext_score uses). There is no mask, so no mask-intent ("_i") split."""
+    from src.pilot_level import G_MAX, G_MIN, mag, ratios, si_sdr
+    e = np.pad(e, (0, max(0, len(x) - len(e))))[:len(x)]    # DFN3 pads; SGMSE+ can trim
+    X, Cm, Y = mag(x), mag(y), mag(e)
+    yc = y.astype(np.float64) - y.mean()
+    g = float((e.astype(np.float64) - e.mean()) @ yc / (yc @ yc + 1e-12))
+    ro, ru, ra = ratios(Y, Cm, X)
+    rog, rug, rag = ratios(Y / np.clip(g, G_MIN, G_MAX), Cm, X)
+    rob, rub, _ = ratios(X, Cm, X)
+    return {"sisdr_in": si_sdr(x, y), "sisdr_out": si_sdr(e, y),
+            "r_over": ro, "r_under": ru, "r_add": ra,
+            "r_over_b4": rob, "r_under_b4": rub,
+            "g": g, "r_over_g": rog, "r_under_g": rug, "r_add_g": rag}
+
+
+def score_windows(tag: str, fold_name: str, enh_dir: Path, limit=None) -> pd.DataFrame:
+    """Score a file-based enhancer's outputs on the exported windows into the CSVs gate
+    U1 reads, so U2 is u1_verdict() on `tag` with no further glue.
+
+    R1 (half A) against R2 (half B) only carries meaning if this enhancer was fine-tuned
+    on half A alone, the way the b*_seg models were. A model that saw both halves, or
+    neither, has R1 == R2 by construction and its U1 unit is empty, not passing."""
+    import soundfile as sf
+    want = {(h, s, r.uid): (r, x, y) for r, h, s, x, y in _windows(fold_name, limit)}
+    rows = []
+    for f in sorted(Path(enh_dir).glob("*.wav")):
+        parts = f.stem.split("__", 2)
+        if len(parts) != 3:
+            print(f"  skip {f.name}: not <half>__<start>__<uid>.wav")
+            continue
+        h, s, uid = parts
+        key = (h, int(s), uid)
+        if key not in want:
+            print(f"  unmatched {f.name}")
+            continue
+        r, x, y = want[key]
+        e, sr = sf.read(str(f), dtype="float32")
+        assert sr == C.SR, f"{f}: {sr} Hz"
+        if e.ndim > 1:
+            e = e.mean(axis=1)
+        m = ext_metrics(x, y, e)
+        rows.append({"uid": uid, "noise_type": r.noise_type, "snr": int(r.target_snr_db),
+                     "half": h, "start": int(s),
+                     **{f"{k}_seg": v for k, v in m.items()}})
+    if not rows:
+        raise SystemExit(f"no enhanced windows matched in {enh_dir}")
+    d = pd.DataFrame(rows)
+    OUT.mkdir(parents=True, exist_ok=True)
+    for name, halves in (("windows", HALVES), ("unseen", ("U",))):
+        part = d[d.half.isin(halves)]
+        if part.empty:
+            print(f"  no {name} rows ({'/'.join(halves)}); U1 cannot score that rung")
+            continue
+        p = OUT / f"{tag}_seg_{fold_name}__{name}.csv"
+        part.to_csv(p, index=False)
+        print(f"wrote {p.name} n={len(part)}")
+    return d
+
+
 # ------------------------------------------------------------- scoring ----
 def score(d: pd.DataFrame, name: str) -> float:
     imp = d[f"si_sdr_out_{name}"] - d.si_sdr_in
@@ -314,6 +415,11 @@ def main(argv=None) -> None:
     ap.add_argument("--report", action="store_true", help="score saved CSVs, no training")
     ap.add_argument("--verify-loops", action="store_true")
     ap.add_argument("--fresh", action="store_true", help="retrain from scratch")
+    ap.add_argument("--export-windows", metavar="DIR",
+                    help="write the windows as wavs for a file-based enhancer (U2)")
+    ap.add_argument("--score-windows", metavar="DIR",
+                    help="score a file-based enhancer's outputs in DIR; needs --tag")
+    ap.add_argument("--tag", help="name of the file-based enhancer, e.g. dfn3")
     a = ap.parse_args(argv)
 
     with open(GATE_PATH) as fh:
@@ -324,13 +430,25 @@ def main(argv=None) -> None:
         verify_loops(df)
         return
 
+    limit = 40 if a.smoke else None
+    if a.export_windows:
+        export_windows(a.fold, Path(a.export_windows), limit)
+        return
+
+    if a.score_windows:
+        if not a.tag:
+            ap.error("--score-windows needs --tag")
+        score_windows(a.tag, a.fold, Path(a.score_windows), limit)
+        return
+
     if a.report:
         parts = []
         for p in sorted(OUT.glob("*_seg_*__windows.csv")):
-            if "smoke" in p.stem:
-                continue
+            d = pd.read_csv(p)
+            if "smoke" in p.stem or "si_sdr_out_full" not in d.columns:
+                continue    # file-based enhancers (U2) have no `full` model to normalise by
             key, fold = p.stem.split("__")[0].split("_seg_")
-            parts.append(summarize(pd.read_csv(p), key, fold))
+            parts.append(summarize(d, key, fold))
         if not parts:
             print(f"no window CSVs in {OUT}")
             return
