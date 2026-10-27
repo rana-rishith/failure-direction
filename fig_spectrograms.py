@@ -13,10 +13,12 @@ Run from the repo root in the faildir env:
 import os, sys
 from pathlib import Path
 
-# Set explicitly (not setdefault): a stale system-level FAILDIR_ROOT exists.
-REPO = Path(r"C:\Users\ranar\Downloads\repo-failure-direction")
-os.environ["FAILDIR_ROOT"] = r"C:\Users\ranar\Downloads\failure-direction\MarVEN"
-os.environ["FAILDIR_CKPT"] = str(REPO / "ckpt")
+# Paths come from the shell (make_figs.ps1 sets both). The old hard-coded paths
+# pointed at a stale clone and a MarVEN copy that no longer exists.
+REPO = Path(__file__).resolve().parent
+for _v in ("FAILDIR_ROOT", "FAILDIR_CKPT"):
+    if _v not in os.environ:
+        raise SystemExit(f"set {_v} first (or run make_figs.ps1)")
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 sys.path.insert(0, str(REPO))
 
