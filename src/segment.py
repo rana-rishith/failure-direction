@@ -294,6 +294,30 @@ def export_windows(fold_name: str, out_dir: Path, limit=None) -> int:
     return n
 
 
+def export_plan(fold_name: str, out: Path, splits=("train", "val")) -> Path:
+    """Half-A crop plan for a trainer that cannot import this module. DFN3 lives in the
+    dfnet env, which has no pyyaml, so instead of exporting audio this writes one row per
+    usable utterance with its valid half-A start ranges in samples. The trainer draws its
+    own random crop inside them, so the 3 s random-crop protocol is unchanged and no
+    audio is duplicated on disk."""
+    df = D.load_manifest()
+    fold = seg_fold(df, fold_name)
+    rows = []
+    for split in splits:
+        f = fold[split]
+        for r in f[f.seg_A.map(len) > 0].itertuples():
+            rows.append({"split": split, "uid": r.uid, "noise_type": r.noise_type,
+                         "snr": int(r.target_snr_db), "win": WIN,
+                         "noisy": str(C.ROOT / r.noisy_path),
+                         "clean": str(C.ROOT / r.clean_path),
+                         "ranges": ";".join(f"{lo}:{hi}" for lo, hi in r.seg_A)})
+    out.parent.mkdir(parents=True, exist_ok=True)
+    d = pd.DataFrame(rows)
+    d.to_csv(out, index=False)
+    print(f"plan: {len(d)} rows ({d.split.value_counts().to_dict()}) -> {out}")
+    return out
+
+
 def ext_metrics(x: np.ndarray, y: np.ndarray, e: np.ndarray) -> dict:
     """Output-STFT energy split of one enhanced window, in src.diverse.analyse's basis
     and column names, via the numpy STFT in src.pilot_level (the same composition
@@ -420,6 +444,8 @@ def main(argv=None) -> None:
     ap.add_argument("--score-windows", metavar="DIR",
                     help="score a file-based enhancer's outputs in DIR; needs --tag")
     ap.add_argument("--tag", help="name of the file-based enhancer, e.g. dfn3")
+    ap.add_argument("--export-plan", metavar="CSV",
+                    help="half-A crop plan for a trainer in another env (U2, DFN3)")
     a = ap.parse_args(argv)
 
     with open(GATE_PATH) as fh:
@@ -431,6 +457,10 @@ def main(argv=None) -> None:
         return
 
     limit = 40 if a.smoke else None
+    if a.export_plan:
+        export_plan(a.fold, Path(a.export_plan))
+        return
+
     if a.export_windows:
         export_windows(a.fold, Path(a.export_windows), limit)
         return
