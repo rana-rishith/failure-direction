@@ -31,10 +31,13 @@ one sample either side. `--verify-loops` repeats that check. Hurricane and
 bubble_curtain never wrap (offset + duration <= recording length for every
 row), so their length is taken from the manifest and positions need no modulo.
 
+Each run also scores one window per test_unseen utterance (`<tag>__unseen.csv`),
+which is gate U1's R4 rung: A windows are R1, B windows R2, unseen types R4.
+
 Usage, from the repo root, after env.ps1:
     python -m src.segment --verify-loops
     python -m src.segment --model b3 --fold weather --smoke
-    python -m src.segment --model b3 --fold weather
+    python -m src.segment --model b1 --fold weather     # also cm
     python -m src.segment --model b3 --fold anthro
     python -m src.segment --report
 """
@@ -53,7 +56,7 @@ from torch.utils.data import DataLoader, Dataset
 
 import config as C
 from src import data as D
-from src import metrics as MT
+from src import diverse as DV
 from src.models import MODELS, load_model
 
 LOOP_SAMPLES = {"rainfall": 176_811, "lightning": 121_174, "large_commercial_ship": 160_086}
@@ -105,6 +108,15 @@ def attach_segments(frame: pd.DataFrame, L: dict[str, int]) -> pd.DataFrame:
     for t in NO_WRAP:
         m = (f.noise_type == t).values
         assert (p0[m] + n[m] <= L[t]).all(), f"{t}: a row wraps; NO_WRAP assumption broken"
+    return f
+
+
+def attach_full_window(frame: pd.DataFrame) -> pd.DataFrame:
+    """R4 windows. An unseen noise type was never heard, so it has no A/B halves and
+    any window qualifies; `seg_U` is the whole utterance."""
+    f = frame.copy()
+    n = np.rint(f.duration_sec.values * C.SR).astype(int)
+    f["seg_U"] = [[(0, int(m) - WIN)] if m >= WIN else [] for m in n]
     return f
 
 
@@ -162,7 +174,7 @@ def seg_fold(df: pd.DataFrame, family: str) -> dict[str, pd.DataFrame]:
     return {k: attach_segments(v, L) for k, v in fold.items()}
 
 
-def train_seg(key: str, fold: dict, tag: str, steps: int) -> None:
+def train_seg(key: str, fold: dict, tag: str, steps: int, fresh: bool = False) -> None:
     from src import train as T
     original = T.D.make_loader
     T.D.make_loader = _seg_loader
@@ -171,7 +183,7 @@ def train_seg(key: str, fold: dict, tag: str, steps: int) -> None:
         va = fold["val"][fold["val"].seg_A.map(len) > 0]
         print(f"[{tag}] half-A rows: train {len(tr)}/{len(fold['train'])}, "
               f"val {len(va)}/{len(fold['val'])}")
-        T.train(key, {"train": tr, "val": va}, tag, steps=steps,
+        T.train(key, {"train": tr, "val": va}, tag, steps=steps, fresh=fresh,
                 val_every=min(C.VAL_EVERY, max(steps // 2, 1)))
     finally:
         T.D.make_loader = original
@@ -179,53 +191,68 @@ def train_seg(key: str, fold: dict, tag: str, steps: int) -> None:
 
 # ---------------------------------------------------------------- eval ----
 @torch.no_grad()
-def run_window(model, x, y, win):
-    with C.autocast():
-        est, mask = model(x)
-    est, mask = est.float(), mask.float()
-    mn = torch.stft(x, C.N_FFT, C.HOP, window=win, return_complex=True).abs()
-    mc = torch.stft(y, C.N_FFT, C.HOP, window=win, return_complex=True).abs()
-    e = MT.energy_decomposition(mask, mn, mc)
-    return MT.si_sdr(est[0], y[0]), e["e_over"] / e["e_clean"], e["e_under"] / e["e_clean"]
-
-
-@torch.no_grad()
-def evaluate_windows(models: dict, frame: pd.DataFrame, out: Path, limit=None) -> pd.DataFrame:
+def evaluate_windows(models: dict, frame: pd.DataFrame, out: Path, limit=None,
+                     halves=HALVES) -> pd.DataFrame:
+    """One row per (utterance, half), with src.diverse.analyse for every model, its keys
+    suffixed by the model name. analyse is the repo's canonical split, so r_over_<name> is
+    the output-STFT basis the gates use and r_over_i_<name> the mask-intent one this
+    module reported before U1; si_sdr_in / si_sdr_out_<name> keep their old names."""
     if limit:
         frame = frame.sample(n=min(limit, len(frame)), random_state=0).reset_index(drop=True)
-    expect = int(sum((frame[f"seg_{h}"].map(len) > 0).sum() for h in HALVES))
+    expect = int(sum((frame[f"seg_{h}"].map(len) > 0).sum() for h in halves))
     if out.exists():
         prev = pd.read_csv(out)
-        if len(prev) == expect:
+        if len(prev) == expect and all(f"r_over_g_{n}" in prev.columns for n in models):
             print(f"skip {out.name} (n={len(prev)})")
             return prev
     dev = C.device()
-    win = torch.hann_window(C.N_FFT, device=dev)
     for m in models.values():
         m.eval().to(dev)
     rows, t0 = [], time.time()
     for i, r in enumerate(frame.itertuples()):
         x, y = D.read_pair(r)
-        for h in HALVES:
+        for h in halves:
             ranges = getattr(r, f"seg_{h}")
             if not ranges:
                 continue
             s = min(centre_start(ranges, len(x)), len(x) - WIN)
-            xt = torch.from_numpy(np.ascontiguousarray(x[s:s + WIN]))[None].to(dev)
-            yt = torch.from_numpy(np.ascontiguousarray(y[s:s + WIN]))[None].to(dev)
+            xw = np.ascontiguousarray(x[s:s + WIN])
+            yw = np.ascontiguousarray(y[s:s + WIN])
             rec = {"uid": r.uid, "noise_type": r.noise_type, "snr": int(r.target_snr_db),
-                   "half": h, "start": s, "si_sdr_in": MT.si_sdr(xt[0], yt[0])}
+                   "half": h, "start": s}
             for name, m in models.items():
-                so, ro, ru = run_window(m, xt, yt, win)
-                rec.update({f"si_sdr_out_{name}": so, f"r_over_{name}": ro, f"r_under_{name}": ru})
+                a = DV.analyse(m, xw, yw, dev)
+                rec.update({f"{k}_{name}": v for k, v in a.items()})
+                rec[f"si_sdr_out_{name}"] = a["sisdr_out"]
+            rec["si_sdr_in"] = a["sisdr_in"]
             rows.append(rec)
         if (i + 1) % 200 == 0:
             print(f"  {out.stem} {i+1}/{len(frame)} {(time.time()-t0)/60:.1f}m", flush=True)
     d = pd.DataFrame(rows)
-    OUT.mkdir(parents=True, exist_ok=True)
+    out.parent.mkdir(parents=True, exist_ok=True)
     d.to_csv(out, index=False)
     print(f"wrote {out.name} n={len(d)} {(time.time()-t0)/60:.1f}m")
     return d
+
+
+def ensure_windows(arch: str, fold_name: str, steps: int, limit=None, sfx: str = "",
+                   fresh: bool = False) -> tuple[Path, Path]:
+    """Half-A model (trained if absent), then the window CSVs U1 needs: A/B windows of
+    test_matched (rungs R1/R2) and one window per test_unseen utterance (rung R4)."""
+    df = D.load_manifest()
+    fold = seg_fold(df, fold_name)
+    tag = f"{arch}_seg_{fold_name}{sfx}"
+    if (C.CKPT / f"{tag}_best.pt").exists() and not fresh:
+        print(f"reuse {tag}_best.pt (no retrain)")
+    else:
+        train_seg(arch, fold, tag, steps, fresh)
+    models = {"seg": load_model(arch, tag, kind="best"),
+              "full": load_model(arch, f"{arch}_{fold_name}", kind="best")}
+    matched, unseen = OUT / f"{tag}__windows.csv", OUT / f"{tag}__unseen.csv"
+    evaluate_windows(models, fold["test_matched"], matched, limit)
+    evaluate_windows({"seg": models["seg"]}, attach_full_window(fold["test_unseen"]),
+                     unseen, limit, halves=("U",))
+    return matched, unseen
 
 
 # ------------------------------------------------------------- scoring ----
@@ -281,11 +308,12 @@ def verify_loops(df: pd.DataFrame, per_type: int = 3) -> None:
 # ---------------------------------------------------------------- main ----
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--model", choices=["b1", "b3"], default="b3")
+    ap.add_argument("--model", choices=["b1", "b3", "cm"], default="b3")
     ap.add_argument("--fold", choices=list(C.FAMILIES), default="weather")
     ap.add_argument("--smoke", action="store_true", help="500 steps, 40 test rows")
     ap.add_argument("--report", action="store_true", help="score saved CSVs, no training")
     ap.add_argument("--verify-loops", action="store_true")
+    ap.add_argument("--fresh", action="store_true", help="retrain from scratch")
     a = ap.parse_args(argv)
 
     with open(GATE_PATH) as fh:
@@ -314,21 +342,8 @@ def main(argv=None) -> None:
         return
 
     steps, limit, sfx = (500, 40, "_smoke") if a.smoke else (gate["steps"], None, "")
-    tag = f"{a.model}_seg_{a.fold}{sfx}"
-    fold = seg_fold(df, a.fold)
-    tm = fold["test_matched"]
-    print(f"test_matched windows: A {int((tm.seg_A.map(len) > 0).sum())}, "
-          f"B {int((tm.seg_B.map(len) > 0).sum())} of {len(tm)} rows")
-
-    if (C.CKPT / f"{tag}_best.pt").exists():
-        print(f"reuse {tag}_best.pt (no retrain)")
-    else:
-        train_seg(a.model, fold, tag, steps)
-
-    models = {"seg": load_model(a.model, tag, kind="best"),
-              "full": load_model(a.model, f"{a.model}_{a.fold}", kind="best")}
-    out = OUT / f"{tag}__windows.csv"
-    d = evaluate_windows(models, tm, out, limit)
+    matched, _ = ensure_windows(a.model, a.fold, steps, limit, sfx, a.fresh)
+    d = pd.read_csv(matched)
     s = summarize(d, a.model, a.fold)
     print("\n" + s.to_string(index=False))
     if a.smoke:
