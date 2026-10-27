@@ -42,25 +42,26 @@ def wada(x):
     return float(np.interp(g, G, DB))
 
 
-df = pd.read_csv(os.path.join(ROOT, "manifest.csv"))
-df = df[df.split.isin(["val", "test"])].reset_index(drop=True)
-if "--fresh" in sys.argv and os.path.exists(OUT):
-    open(OUT, "w").close()
-done = set(pd.read_csv(OUT).noisy_path) if os.path.exists(OUT) and os.path.getsize(OUT) else set()
-rows = []
-for i, r in enumerate(df.itertuples()):
-    if r.noisy_path in done:
-        continue
-    w = wave.open(os.path.join(ROOT, r.noisy_path))
-    x = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16) / 32768.0
-    uid = f"{r.speaker_id}-{r.chapter_id}-{int(r.utterance_id):04d}|{r.noise_type}|{int(r.target_snr_db):+d}"
-    rows.append({"noisy_path": r.noisy_path, "uid": uid, "wada_snr": wada(x)})
-    if len(rows) == 500:
+if __name__ == "__main__":          # importable: run_universal reuses wada()
+    df = pd.read_csv(os.path.join(ROOT, "manifest.csv"))
+    df = df[df.split.isin(["val", "test"])].reset_index(drop=True)
+    if "--fresh" in sys.argv and os.path.exists(OUT):
+        open(OUT, "w").close()
+    done = set(pd.read_csv(OUT).noisy_path) if os.path.exists(OUT) and os.path.getsize(OUT) else set()
+    rows = []
+    for i, r in enumerate(df.itertuples()):
+        if r.noisy_path in done:
+            continue
+        w = wave.open(os.path.join(ROOT, r.noisy_path))
+        x = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16) / 32768.0
+        uid = f"{r.speaker_id}-{r.chapter_id}-{int(r.utterance_id):04d}|{r.noise_type}|{int(r.target_snr_db):+d}"
+        rows.append({"noisy_path": r.noisy_path, "uid": uid, "wada_snr": wada(x)})
+        if len(rows) == 500:
+            pd.DataFrame(rows).to_csv(OUT, mode="a", header=not (os.path.exists(OUT) and os.path.getsize(OUT)), index=False)
+            rows = []
+            print(i + 1, flush=True)
+    if rows:
         pd.DataFrame(rows).to_csv(OUT, mode="a", header=not (os.path.exists(OUT) and os.path.getsize(OUT)), index=False)
-        rows = []
-        print(i + 1, flush=True)
-if rows:
-    pd.DataFrame(rows).to_csv(OUT, mode="a", header=not (os.path.exists(OUT) and os.path.getsize(OUT)), index=False)
-d = pd.read_csv(OUT)
-print(len(d), "rows; WADA vs nominal SNR correlation:",
-      round(float(np.corrcoef(d.wada_snr, d.uid.str.split("|").str[2].astype(int))[0, 1]), 3))
+    d = pd.read_csv(OUT)
+    print(len(d), "rows; WADA vs nominal SNR correlation:",
+          round(float(np.corrcoef(d.wada_snr, d.uid.str.split("|").str[2].astype(int))[0, 1]), 3))
