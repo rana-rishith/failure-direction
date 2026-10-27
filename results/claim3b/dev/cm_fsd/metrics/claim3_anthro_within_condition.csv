@@ -1,0 +1,17 @@
+noise_type,snr,n,baseline,full,feats_only
+bubble_curtain,-15,54,0.179,-0.193,-0.126
+bubble_curtain,-10,68,0.079,0.025,0.019
+bubble_curtain,-5,55,0.101,-0.063,0.009
+bubble_curtain,0,56,-0.289,-0.084,0.088
+bubble_curtain,5,55,0.133,0.414,0.127
+bubble_curtain,10,56,0.079,0.342,-0.057
+bubble_curtain,15,67,0.064,0.257,-0.008
+bubble_curtain,20,65,-0.15,0.308,0.047
+large_commercial_ship,-15,50,0.158,0.509,0.274
+large_commercial_ship,-10,41,0.297,0.475,0.322
+large_commercial_ship,-5,55,0.476,0.547,0.656
+large_commercial_ship,0,56,0.452,0.608,0.603
+large_commercial_ship,5,60,0.242,0.516,0.392
+large_commercial_ship,10,61,0.078,0.219,0.197
+large_commercial_ship,15,58,-0.055,0.372,0.168
+large_commercial_ship,20,60,0.08,0.347,0.225
