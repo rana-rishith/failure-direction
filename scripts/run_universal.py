@@ -3,7 +3,7 @@
     python scripts/run_universal.py --gate u1class     # existing data, minutes, CPU
     python scripts/run_universal.py --gate u1          # trains the missing seg models (GPU)
     python scripts/run_universal.py --gate u3          # CPU, needs results/xcorpus
-    python scripts/run_universal.py --gate u2          # not implemented, exits non-zero
+    python scripts/run_universal.py --gate u2          # needs 2 of 3 non-bounded classes
     python scripts/run_universal.py --gate all         # u1 -> u1class -> u3
 
 The gates stay separate claims; this only puts them behind one command. Each stage
@@ -13,8 +13,8 @@ and skips itself when its verdict file exists. --force re-runs a stage; --no-res
 also retrains and re-extracts instead of reusing checkpoints and caches.
 
 Every threshold comes from the yaml. Some of them live inside its prose (the class
-definitions, "in >= 3 of 4 levels", "in >= 75% of cells"); those are parsed out by
-_nums() rather than typed here, so the yaml stays the only place they exist.
+definitions, "in >= 3 of 4 levels", "in >= 75% of cells"); _after() reads those off the
+yaml text rather than typing them here, so the yaml stays the only place they exist.
 """
 from __future__ import annotations
 
@@ -55,8 +55,15 @@ def load_gate() -> tuple[dict, str]:
     return yaml.safe_load(text), hashlib.sha256(text.encode()).hexdigest()[:12]
 
 
-def _nums(s) -> list[float]:
-    return [float(t) for t in re.findall(r"-?\d+(?:\.\d+)?", str(s))]
+def _after(s, op: str) -> float:
+    """The number the yaml writes immediately after a comparison. Anchoring on the
+    operator keeps a threshold apart from a digit inside a name: U2's pass_if reads
+    "U1_novelty_monotone pass_arch_if holds for >= 2 of 3 ...", whose first number is
+    the 1 in U1."""
+    m = re.search(re.escape(op) + r"\s*(-?\d+(?:\.\d+)?)", str(s))
+    if m is None:
+        raise SystemExit(f"no {op!r} threshold in the yaml text: {s!r}")
+    return float(m.group(1))
 
 
 def _git(*args) -> str:
@@ -143,7 +150,7 @@ def u1_verdict(rows: pd.DataFrame, archs, cfg: dict) -> tuple[list[dict], dict, 
     Folds are pooled for the verdict; per-fold medians are reported beside it."""
     u = cfg["U1_novelty_monotone"]
     snr_low = cfg["definitions"]["snr_low"]
-    min_levels = int(_nums(u["pass_arch_if"])[0])
+    min_levels = int(_after(u["pass_arch_if"], ">="))
     cells, arch_pass, levels = [], {}, {}
     for arch in archs:
         for fold in ["all", *sorted(rows.fold.unique())]:
@@ -207,8 +214,8 @@ def stage_u1(cfg: dict, sha: str, a) -> None:
 def stage_u1class(cfg: dict, sha: str, a) -> None:
     u = cfg["U1_failure_class"]
     snr_low = cfg["definitions"]["snr_low"]
-    nr_max = _nums(u["classes"]["inert"])[0]
-    add_min = _nums(u["classes"]["hallucinate"])[0]
+    nr_max = _after(u["classes"]["inert"], "<")
+    add_min = _after(u["classes"]["hallucinate"], ">=")
     heard = {"weather": C.WEATHER, "anthro": C.ANTHRO}
     tags = [f"{k}_{f}" for k in ARCHS for f in C.FAMILIES]
     d = pd.read_csv(XC / "eval" / "marven.csv")
@@ -329,7 +336,7 @@ def _oof(d: pd.DataFrame, cols, kind: str, seed: int = C.SEED, n_splits: int = 5
 def stage_u3(cfg: dict, sha: str, a) -> None:
     from src.claim3 import within
     u = cfg["U3_within_condition"]
-    min_frac = _nums(u["pass_if"][1])[0] / 100
+    min_frac = _after(u["pass_if"][1], ">=") / 100
     conds = [c for cs in CORPORA.values() for c in cs]
     F = u3_features(conds, a.no_resume)
     d = u3_labels(conds, a.tag).merge(F, on=["cond", "uid"], validate="1:1")
@@ -375,11 +382,54 @@ def stage_u3(cfg: dict, sha: str, a) -> None:
 
 
 # ------------------------------------------------------------------- U2 ----
+# The yaml names the non-bounded classes in prose; these are the checkpoint prefixes
+# that stand for them. complex_mask -> cm is configs/gate_amend_cm.yaml, committed
+# before any cm model was trained. dfn3 and sgmse are file-based: they run in the
+# dfnet / sgmse envs, so their rows arrive through src.segment's --score-windows.
+U2_CLASSES = {"complex_mask": ["cm"], "diverse_pretrained": ["dfn3"], "generative": ["sgmse"]}
+
+
 def stage_u2(cfg: dict, sha: str, a) -> None:
-    raise SystemExit(
-        "u2 (U1 beyond bounded masks: DFN3 and SGMSE+ fine-tuned per fold) is not "
-        "implemented. u1_verdict() takes the model list, so U2 is that call on the "
-        f"fine-tuned tags once they exist. pass_if: {cfg['U2_beyond_bounded']['pass_if']}")
+    """U1's rule applied to the non-bounded architecture classes. Reuses u1_verdict with
+    a different model list, which is why that function takes one.
+
+    A class with no rows is not a failing class, it is a missing measurement, so this
+    refuses to write a verdict until enough classes have data. Writing FAIL for an
+    unmeasured arm would put a pre-registered verdict file on the record that says
+    something the run never tested."""
+    u = cfg["U2_beyond_bounded"]
+    min_classes = int(_after(u["pass_if"], ">="))
+    have, missing = {}, {}
+    for cls, archs in U2_CLASSES.items():
+        ready = [k for k in archs
+                 if all((SEG / f"{k}_seg_{f}__{s}.csv").exists()
+                        for f in C.FAMILIES for s in ("windows", "unseen"))]
+        (have if ready else missing)[cls] = ready or archs
+    if len(have) < min_classes:
+        raise SystemExit(
+            f"u2 needs {min_classes} of {len(U2_CLASSES)} non-bounded classes and has "
+            f"{len(have)} ({', '.join(have) or 'none'}). Missing: "
+            + "; ".join(f"{c} ({'/'.join(k)})" for c, k in missing.items())
+            + ".\nEach missing arm needs a half-A fine-tune, then: python -m src.segment "
+              "--fold <fold> --export-windows DIR, run the model over DIR, then "
+              "--score-windows DIR --tag <arch>.")
+    archs = [k for ks in have.values() for k in ks]
+    rows = u1_rows(archs)
+    cells, arch_pass, thresholds = u1_verdict(rows, archs, cfg)
+    class_pass = {c: any(arch_pass[k] for k in ks) for c, ks in have.items()}
+    amend = REPO / "configs" / "gate_amend_cm.yaml"
+    write_verdict("u2", cfg, sha,
+                  thresholds | {"pass_if": u["pass_if"], "min_classes": min_classes,
+                                "on_fail": u["on_fail"]},
+                  cells, sum(class_pass.values()) >= min_classes,
+                  {"class_pass": class_pass, "arch_pass": arch_pass,
+                   "classes_measured": have, "classes_missing": missing,
+                   "complex_mask_amendment_sha256_12":
+                       hashlib.sha256(amend.read_bytes()).hexdigest()[:12],
+                   "rungs": {"R1": "A windows", "R2": "B windows",
+                             "R4": "test_unseen windows"},
+                   "requirement": "each arm must be fine-tuned on half A only, or R1 "
+                                  "and R2 are the same measurement"})
 
 
 STAGES = {"u1": stage_u1, "u1class": stage_u1class, "u3": stage_u3, "u2": stage_u2}
