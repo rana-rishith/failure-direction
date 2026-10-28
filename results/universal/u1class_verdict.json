@@ -1,0 +1,107 @@
+{
+  "gate": "u1class",
+  "config_commit": "29c1566",
+  "config_committed_at": "2026-10-19",
+  "config_sha256_12": "a13d0d71f9e6",
+  "code_commit": "c2b4eeaa84958e40710ba495bd1cc800ee950630",
+  "untracked_files": [
+    "paper/.gitignore",
+    "paper/main.tex",
+    "paper/refs.bib",
+    "paper/sections/01_intro.tex",
+    "paper/sections/02_related.tex",
+    "paper/sections/03_data.tex",
+    "paper/sections/04_measure.tex",
+    "paper/sections/05_models.tex",
+    "paper/sections/06_protocol.tex",
+    "paper/sections/07_claim1.tex",
+    "paper/sections/08_claim2.tex",
+    "paper/sections/09_claim3.tex",
+    "paper/sections/10_diversity.tex",
+    "paper/sections/11_discussion.tex",
+    "paper/sections/12_conclusion.tex",
+    "paper/sections/A_appendix.tex",
+    "results/universal/u1_cells.csv",
+    "results/universal/u1_verdict.json",
+    "results/universal/u1class_cells.csv",
+    "results/universal/u1class_verdict.json",
+    "results/universal/u3_cells.csv",
+    "results/universal/u3_features.csv",
+    "results/universal/u3_verdict.json"
+  ],
+  "run_at": "2026-10-28T09:17:48",
+  "thresholds": {
+    "classes": {
+      "inert": "nr < 0.30 and r_over_x(R4) < r_over_x(R1)",
+      "over": "r_over_x(R4) >= r_over_x(R1)",
+      "hallucinate": "median r_add >= 0.05"
+    },
+    "nr_max": 0.3,
+    "r_add_min": 0.05,
+    "snr_low": [
+      -15,
+      -10,
+      -5,
+      0
+    ],
+    "pass_if": "every architecture receives at least one class (the classification is complete)",
+    "rule": "an architecture can carry more than one class; all assignments are reported"
+  },
+  "notes": {
+    "classes": {
+      "b1": [
+        "inert"
+      ],
+      "b3": [
+        "inert"
+      ],
+      "cm": [
+        "inert"
+      ]
+    },
+    "tags": [
+      "b1_weather",
+      "b1_anthro",
+      "b3_weather",
+      "b3_anthro",
+      "cm_weather",
+      "cm_anthro"
+    ],
+    "source": "results/xcorpus/eval/marven.csv",
+    "basis": "output STFT, level-aligned (_g)",
+    "architectures_covered": "bounded_mask and complex_mask; diverse_pretrained and generative wait for U2"
+  },
+  "cells": [
+    {
+      "arch": "b1",
+      "n_R4": 1095,
+      "n_R1": 1095,
+      "median_nr_R4": -0.0142,
+      "median_r_over_x_R4": 0.0022,
+      "median_r_over_x_R1": 0.0313,
+      "median_r_add_R4": 0.0032,
+      "classes": "inert"
+    },
+    {
+      "arch": "b3",
+      "n_R4": 1095,
+      "n_R1": 1095,
+      "median_nr_R4": 0.019,
+      "median_r_over_x_R4": 0.0064,
+      "median_r_over_x_R1": 0.0464,
+      "median_r_add_R4": 0.0057,
+      "classes": "inert"
+    },
+    {
+      "arch": "cm",
+      "n_R4": 1095,
+      "n_R1": 1095,
+      "median_nr_R4": 0.029,
+      "median_r_over_x_R4": 0.0034,
+      "median_r_over_x_R1": 0.0292,
+      "median_r_add_R4": 0.0055,
+      "classes": "inert"
+    }
+  ],
+  "verdict": "PASS"
+}
