@@ -24,7 +24,10 @@ Protocol, matching the MarVEN models: 20,000 gradient steps, batch 8, lr 2e-4, 3
 random crops drawn inside the half-A ranges, SI-SDR loss, seed 1234. Equal steps, not
 equal epochs. Checkpoints are atomic and resumable (model, optimiser, step, RNG).
 
-Two differences from src/train.py, both forced by DFN3 and both reported:
+Three differences from src/train.py, all reported:
+  - No validation or best-checkpoint selection: the step-20,000 weights are used. The
+    b*_seg models take their best-val checkpoint instead. Equal compute is equal
+    gradient steps either way, but the selection rule differs and the paper must say so.
   - DFN3 runs at 48 kHz, so crops are resampled 16 -> 48 kHz and the loss is at 48 kHz.
   - The loss goes through df.loss.Istft (plain torch.istft), not df_state.synthesis(),
     which is Rust and carries no gradient. Inference still uses the real synthesis, so
