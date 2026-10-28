@@ -34,6 +34,7 @@ Three differences from src/train.py, all reported:
     enhance mode reproduces df.enhance.enhance() exactly, delay trim included.
 """
 import os
+import shutil
 import time
 from argparse import ArgumentParser
 from pathlib import Path
@@ -183,8 +184,8 @@ def train(a):
 
 def enhance_dir(a):
     """Inference uses the real Rust synthesis, so outputs match df.enhance exactly.
-    File names are passed through untouched: src.segment --score-windows parses
-    <half>__<start>__<uid>.wav out of them."""
+    File names are passed through untouched and index.csv is copied along: that file is
+    how src.segment --score-windows maps a window back to (half, start, uid)."""
     model, df_state, _, p, dev = setup(a.model)
     if a.ckpt:
         s = torch.load(a.ckpt, map_location=dev, weights_only=False)
@@ -211,6 +212,8 @@ def enhance_dir(a):
         sf.write(str(out / f.name), np.pad(e, (0, max(0, n - len(e)))), SR, subtype="FLOAT")
         if i % 200 == 0:
             print(f"  {i}/{len(todo)} {(time.time() - t0) / 60:.1f}m", flush=True)
+    if (src / "index.csv").exists():
+        shutil.copyfile(src / "index.csv", out / "index.csv")
     print(f"wrote {len(todo)} files -> {out}")
 
 
