@@ -143,3 +143,24 @@ def test_unseen_window_covers_the_whole_utterance():
     assert f.seg_U.iloc[0] == [(0, 10 * S.C.SR - S.WIN)]
     assert f.seg_U.iloc[1] == []                   # shorter than the 3 s window
     assert S.centre_start(f.seg_U.iloc[0], 10 * S.C.SR) == (10 * S.C.SR - S.WIN) // 2
+
+
+def test_canonical_lgbm_arm_predicts_every_row():
+    """The post-hoc variant routes the lgbm arm through src.claim3.fit_arm, which early
+    stops and so needs a validation split carved off the training side. Every row must
+    still come back with exactly one out-of-fold prediction."""
+    rng = np.random.default_rng(0)
+    n = 300
+    d = pd.DataFrame({"uid": [f"{i % 20}-1-{i:04d}" for i in range(n)],
+                      "f1": rng.standard_normal(n), "f2": rng.standard_normal(n)})
+    d["y"] = 2 * d.f1 + 0.1 * rng.standard_normal(n)
+    pred = U._oof(d, ["f1", "f2"], "lgbm", canonical=True)
+    assert np.isfinite(pred).all()
+    assert np.corrcoef(pred, d.y)[0, 1] > 0.5
+
+
+def test_sens_is_refused_outside_u3():
+    """--sens writes u3_sens_<name>_verdict.json, so it means nothing on another gate
+    and must not be silently ignored there."""
+    with pytest.raises(SystemExit):
+        U.main(["--gate", "u1class", "--sens", "canonical_lgbm"])
