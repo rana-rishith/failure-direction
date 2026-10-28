@@ -279,19 +279,26 @@ def _windows(fold_name: str, limit=None):
 
 def export_windows(fold_name: str, out_dir: Path, limit=None) -> int:
     """Write each window's noisy audio for an enhancer that runs as a separate process
-    (DFN3, SGMSE+). Clean is not written: `start` is in the file name, so score_windows
-    slices the same window out of the manifest's own clean file."""
+    (DFN3, SGMSE+). Clean is not written: index.csv records each window's start, so
+    score_windows slices the same window out of the manifest's own clean file.
+
+    Files are named w00000.wav and index.csv maps them back to (half, start, uid).
+    The uid cannot go in the file name: MarVEN uids look like
+    "19-198-0001|hurricane|-15" and Windows forbids '|' in a path."""
     import soundfile as sf
     d = Path(out_dir)
     d.mkdir(parents=True, exist_ok=True)
-    n = 0
-    for r, h, s, x, _ in _windows(fold_name, limit):
-        p = d / f"{h}__{s}__{r.uid}.wav"
+    rows = []
+    for i, (r, h, s, x, _) in enumerate(_windows(fold_name, limit)):
+        name = f"w{i:05d}.wav"
+        p = d / name
         if not p.exists():
             sf.write(str(p), x, C.SR, subtype="FLOAT")
-        n += 1
-    print(f"{n} windows -> {d}")
-    return n
+        rows.append({"name": name, "half": h, "start": s, "uid": r.uid,
+                     "noise_type": r.noise_type, "snr": int(r.target_snr_db)})
+    pd.DataFrame(rows).to_csv(d / "index.csv", index=False)
+    print(f"{len(rows)} windows + index.csv -> {d}")
+    return len(rows)
 
 
 def export_plan(fold_name: str, out: Path, splits=("train", "val")) -> Path:
@@ -344,17 +351,23 @@ def score_windows(tag: str, fold_name: str, enh_dir: Path, limit=None) -> pd.Dat
     on half A alone, the way the b*_seg models were. A model that saw both halves, or
     neither, has R1 == R2 by construction and its U1 unit is empty, not passing."""
     import soundfile as sf
+    enh = Path(enh_dir)
+    idx = enh / "index.csv"
+    if not idx.exists():
+        raise SystemExit(f"{idx} missing: it must sit beside the enhanced wavs "
+                         "(scripts/dfn_seg.py enhance copies it from the input dir)")
+    ix = pd.read_csv(idx)
+    index = dict(zip(ix["name"], zip(ix["half"], ix["start"].astype(int), ix["uid"])))
     want = {(h, s, r.uid): (r, x, y) for r, h, s, x, y in _windows(fold_name, limit)}
     rows = []
-    for f in sorted(Path(enh_dir).glob("*.wav")):
-        parts = f.stem.split("__", 2)
-        if len(parts) != 3:
-            print(f"  skip {f.name}: not <half>__<start>__<uid>.wav")
+    for f in sorted(enh.glob("*.wav")):
+        key = index.get(f.name)
+        if key is None:
+            print(f"  skip {f.name}: not in index.csv")
             continue
-        h, s, uid = parts
-        key = (h, int(s), uid)
+        h, s, uid = key
         if key not in want:
-            print(f"  unmatched {f.name}")
+            print(f"  unmatched {f.name} ({h} {s} {uid})")
             continue
         r, x, y = want[key]
         e, sr = sf.read(str(f), dtype="float32")
