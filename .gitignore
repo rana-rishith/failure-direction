@@ -84,3 +84,9 @@ results/features_burst/
 results/claim3_active/*/predictions/
 results/claim3b/*/*/predictions/
 results/claim3c/*/*/predictions/
+
+# segment-control per-window dumps and crop plans: one row per utterance-half, and
+# plans hold absolute paths. The verdicts, per-cell CSVs and segment_summary.csv carry
+# every number the gates claim. Same rule as results/labels_active/*__*.csv.
+results/segment/*__*.csv
+results/segment/plan_*.csv
