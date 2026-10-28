@@ -1,0 +1,25 @@
+kind,pair,corpus,n_cells,mean_rho,median_rho,min_rho,max_rho
+seed,b1_weather / b1_weather_s2,marven,40,0.895,0.906,0.769,0.978
+seed,b1_weather / b1_weather_s2,demand,24,0.852,0.857,0.699,0.944
+seed,b1_weather / b1_weather_s2,fsd50k,24,0.881,0.893,0.727,0.946
+seed,b1_weather / b1_weather_s3,marven,40,0.878,0.896,0.676,0.991
+seed,b1_weather / b1_weather_s3,demand,24,0.857,0.88,0.6,0.951
+seed,b1_weather / b1_weather_s3,fsd50k,24,0.856,0.877,0.642,0.93
+seed,b1_weather_s2 / b1_weather_s3,marven,40,0.888,0.898,0.722,0.99
+seed,b1_weather_s2 / b1_weather_s3,demand,24,0.851,0.87,0.656,0.952
+seed,b1_weather_s2 / b1_weather_s3,fsd50k,24,0.874,0.91,0.689,0.936
+seed,b3_weather / b3_weather_s2,marven,40,0.861,0.909,0.604,0.982
+seed,b3_weather / b3_weather_s2,demand,24,0.807,0.825,0.562,0.914
+seed,b3_weather / b3_weather_s2,fsd50k,24,0.812,0.853,0.598,0.944
+seed,cm_weather / cm_weather_s2,marven,40,0.899,0.93,0.709,0.991
+seed,cm_weather / cm_weather_s2,demand,24,0.866,0.893,0.602,0.97
+seed,cm_weather / cm_weather_s2,fsd50k,24,0.852,0.879,0.636,0.942
+arch,b1_weather / b3_weather,marven,40,0.758,0.798,0.328,0.978
+arch,b1_weather / b3_weather,demand,24,0.795,0.808,0.556,0.937
+arch,b1_weather / b3_weather,fsd50k,24,0.727,0.747,0.555,0.879
+arch,b1_weather / cm_weather,marven,40,0.842,0.885,0.433,0.984
+arch,b1_weather / cm_weather,demand,24,0.722,0.723,0.501,0.932
+arch,b1_weather / cm_weather,fsd50k,24,0.843,0.851,0.706,0.945
+arch,b3_weather / cm_weather,marven,40,0.772,0.779,0.424,0.968
+arch,b3_weather / cm_weather,demand,24,0.801,0.813,0.508,0.949
+arch,b3_weather / cm_weather,fsd50k,24,0.713,0.733,0.482,0.833
