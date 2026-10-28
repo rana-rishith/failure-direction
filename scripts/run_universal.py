@@ -3,6 +3,7 @@
     python scripts/run_universal.py --gate u1class     # existing data, minutes, CPU
     python scripts/run_universal.py --gate u1          # trains the missing seg models (GPU)
     python scripts/run_universal.py --gate u3          # CPU, needs results/xcorpus
+    python scripts/run_universal.py --gate u3 --sens canonical_lgbm   # post-hoc variant
     python scripts/run_universal.py --gate u2          # needs 2 of 3 non-bounded classes
     python scripts/run_universal.py --gate all         # u1 -> u1class -> u3
 
@@ -306,7 +307,18 @@ def u3_labels(conds, tag: str) -> pd.DataFrame:
     return d[["cond", "uid", "noise_type", "snr", "y", "clipped"]]
 
 
-def _fit(kind: str, cols, tr: pd.DataFrame, te: pd.DataFrame, seed: int):
+def _fit(kind: str, cols, tr: pd.DataFrame, te: pd.DataFrame, seed: int,
+         canonical: bool = False):
+    if kind == "lgbm" and canonical:
+        # The canonical_lgbm sensitivity arm calls claim 3's own fitter, so "canonical"
+        # means that function rather than a copy of its numbers here. It early-stops, so
+        # it needs a validation split, carved off the training side by speaker.
+        from sklearn.model_selection import GroupKFold
+
+        from src.claim3 import fit_arm
+        i, j = next(GroupKFold(n_splits=5).split(
+            tr, groups=tr.uid.str.split("-").str[0]))
+        return fit_arm(cols, "canonical_lgbm", tr.iloc[i], tr.iloc[j], te, seed)[2]
     if kind == "lgbm":
         import lightgbm as lgb
         m = lgb.LGBMRegressor(n_estimators=600, learning_rate=0.03, num_leaves=31,
@@ -321,20 +333,22 @@ def _fit(kind: str, cols, tr: pd.DataFrame, te: pd.DataFrame, seed: int):
     return m.predict(te[cols])
 
 
-def _oof(d: pd.DataFrame, cols, kind: str, seed: int = C.SEED, n_splits: int = 5) -> np.ndarray:
+def _oof(d: pd.DataFrame, cols, kind: str, seed: int = C.SEED, n_splits: int = 5,
+         canonical: bool = False) -> np.ndarray:
     """Out-of-fold predictions, folds grouped by speaker: every row is a test row once,
     and no speaker is on both sides of a split."""
     from sklearn.model_selection import GroupKFold
     pred = np.full(len(d), np.nan)
     spk = d.uid.str.split("-").str[0]
     for tr, te in GroupKFold(n_splits=n_splits).split(d, groups=spk):
-        pred[te] = _fit(kind, cols, d.iloc[tr], d.iloc[te], seed)
+        pred[te] = _fit(kind, cols, d.iloc[tr], d.iloc[te], seed, canonical)
     assert np.isfinite(pred).all(), "a row got no out-of-fold prediction"
     return pred
 
 
 def stage_u3(cfg: dict, sha: str, a) -> None:
     from src.claim3 import within
+    sens = getattr(a, "sens", None)
     u = cfg["U3_within_condition"]
     min_frac = _after(u["pass_if"][1], ">=") / 100
     conds = [c for cs in CORPORA.values() for c in cs]
@@ -354,7 +368,8 @@ def stage_u3(cfg: dict, sha: str, a) -> None:
             continue
         # DEMAND / FSD cells are the condition: per-environment cells hold too few rows.
         g["cell_noise"] = np.where(g.cond == "marven", g.noise_type, g.cond)
-        preds = {name: _oof(g, cols, kind) for name, (kind, cols) in arms.items()}
+        preds = {name: _oof(g, cols, kind, canonical=sens == "canonical_lgbm")
+                 for name, (kind, cols) in arms.items()}
         w = within(g, preds, by=["cell_noise", "snr"])
         mean = {k: float(w[k].mean()) for k in arms}
         wins = {k: float((w.feats_only_lgbm > w[k]).mean()) for k in rivals}
@@ -370,15 +385,24 @@ def stage_u3(cfg: dict, sha: str, a) -> None:
               + ", ".join(f"{k}={mean[k]:.3f}" for k in arms))
     passed = bool(corpus_pass.get("marven")
                   and (corpus_pass.get("demand") or corpus_pass.get("fsd50k")))
-    write_verdict("u3", cfg, sha,
+    notes = {"per_corpus": means, "y_floor": Y_FLOOR,
+             "split": "5-fold out-of-fold, grouped by speaker",
+             "label": "log10(r_over_x), level-aligned (_g) output STFT",
+             "corpora_required": "MarVEN and at least one of DEMAND / FSD50K"}
+    if sens:
+        # A post-hoc variant is not the gate. It gets its own file, says so in its own
+        # notes, and never touches u3_verdict.json, which was decided before this ran.
+        notes |= {"post_hoc": True, "sensitivity": sens,
+                  "pre_registered_verdict": "u3_verdict.json",
+                  "deviation": "the feats_only_lgbm arm is src.claim3.fit_arm "
+                               "(n_estimators 2000, early stopping on a speaker-grouped "
+                               "validation split) instead of this runner's fixed 600 "
+                               "rounds. Thresholds and arms are the yaml's, unchanged."}
+    write_verdict(f"u3_sens_{sens}" if sens else "u3", cfg, sha,
                   {"target": u["target"], "cells": u["cells"], "arms": u["arms"],
                    "pass_if": u["pass_if"], "min_cell_fraction": min_frac,
                    "min_rows_per_cell": 25, "enhancer_tag": a.tag},
-                  cells, passed,
-                  {"per_corpus": means, "y_floor": Y_FLOOR,
-                   "split": "5-fold out-of-fold, grouped by speaker",
-                   "label": "log10(r_over_x), level-aligned (_g) output STFT",
-                   "corpora_required": "MarVEN and at least one of DEMAND / FSD50K"})
+                  cells, passed, notes)
 
 
 # ------------------------------------------------------------------- U2 ----
@@ -445,15 +469,22 @@ def main(argv=None) -> None:
     p.add_argument("--tag", default="b1_weather", help="U3 enhancer whose r_over_x is the label")
     p.add_argument("--allow-cpu", action="store_true",
                    help="let U1 train on the CPU (about 25 h for the four models)")
+    p.add_argument("--sens", choices=["canonical_lgbm"],
+                   help="post-hoc U3 sensitivity variant, written to its own "
+                        "u3_sens_<name>_verdict.json; the pre-registered u3 verdict is "
+                        "left alone")
     a = p.parse_args(argv)
+    if a.sens and a.gate != "u3":
+        p.error("--sens is a U3 variant; use it with --gate u3")
     cfg, sha = load_gate()
     for gate in (ORDER if a.gate == "all" else [a.gate]):
-        v = OUT / f"{gate}_verdict.json"
+        gid = f"u3_sens_{a.sens}" if gate == "u3" and a.sens else gate
+        v = OUT / f"{gid}_verdict.json"
         if v.exists() and not a.force:
-            print(f"{gate}: {json.loads(v.read_text())['verdict']} already in {v.name}, "
+            print(f"{gid}: {json.loads(v.read_text())['verdict']} already in {v.name}, "
                   "skipped (--force to re-run)")
             continue
-        print(f"\n######## {gate} ########", flush=True)
+        print(f"\n######## {gid} ########", flush=True)
         STAGES[gate](cfg, sha, a)
 
 
