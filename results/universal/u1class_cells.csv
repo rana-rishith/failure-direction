@@ -1,0 +1,4 @@
+arch,n_R4,n_R1,median_nr_R4,median_r_over_x_R4,median_r_over_x_R1,median_r_add_R4,classes
+b1,1095,1095,-0.0142,0.0022,0.0313,0.0032,inert
+b3,1095,1095,0.019,0.0064,0.0464,0.0057,inert
+cm,1095,1095,0.029,0.0034,0.0292,0.0055,inert
