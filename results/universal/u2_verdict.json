@@ -1,0 +1,368 @@
+{
+  "gate": "u2",
+  "config_commit": "29c1566",
+  "config_committed_at": "2026-10-19",
+  "config_sha256_12": "a13d0d71f9e6",
+  "code_commit": "cc8aab9b97f885cb2cd53f818ec1db43f7a8e5f4",
+  "untracked_files": [
+    "paper/.gitignore",
+    "paper/main.tex",
+    "paper/refs.bib",
+    "paper/sections/01_intro.tex",
+    "paper/sections/02_related.tex",
+    "paper/sections/03_data.tex",
+    "paper/sections/04_measure.tex",
+    "paper/sections/05_models.tex",
+    "paper/sections/06_protocol.tex",
+    "paper/sections/07_claim1.tex",
+    "paper/sections/08_claim2.tex",
+    "paper/sections/09_claim3.tex",
+    "paper/sections/10_diversity.tex",
+    "paper/sections/11_discussion.tex",
+    "paper/sections/12_conclusion.tex",
+    "paper/sections/A_appendix.tex",
+    "results/universal/u2_cells.csv"
+  ],
+  "run_at": "2026-10-28T12:04:49",
+  "thresholds": {
+    "snr_low": [
+      -15,
+      -10,
+      -5,
+      0
+    ],
+    "min_levels": 3,
+    "pass_unit_if": "median d strictly decreases R1 > R2 > R4 (R3 added where the corpus allows)",
+    "pass_arch_if": "unit passes in >= 3 of 4 snr_low levels",
+    "pass_if": "U1_novelty_monotone pass_arch_if holds for >= 2 of 3 non-bounded architecture classes",
+    "statistic": "median d per rung",
+    "basis": "output STFT, level-aligned (_g)",
+    "levels_passed": {
+      "cm": 4,
+      "dfn3": 4
+    },
+    "min_classes": 2,
+    "on_fail": "headline narrows to 'bounded mask estimators'"
+  },
+  "notes": {
+    "class_pass": {
+      "complex_mask": true,
+      "diverse_pretrained": true
+    },
+    "arch_pass": {
+      "cm": true,
+      "dfn3": true
+    },
+    "classes_measured": {
+      "complex_mask": [
+        "cm"
+      ],
+      "diverse_pretrained": [
+        "dfn3"
+      ]
+    },
+    "classes_missing": {
+      "generative": [
+        "sgmse"
+      ]
+    },
+    "complex_mask_amendment_sha256_12": "85f3ef3e8df0",
+    "rungs": {
+      "R1": "A windows",
+      "R2": "B windows",
+      "R4": "test_unseen windows"
+    },
+    "requirement": "each arm must be fine-tuned on half A only, or R1 and R2 are the same measurement"
+  },
+  "cells": [
+    {
+      "arch": "cm",
+      "fold": "all",
+      "snr": -15,
+      "median_d_R1": -0.233,
+      "median_d_R2": -0.9534,
+      "median_d_R4": -0.9982,
+      "n_R1": 202,
+      "n_R2": 207,
+      "n_R4": 238,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "all",
+      "snr": -10,
+      "median_d_R1": 0.0849,
+      "median_d_R2": -0.8358,
+      "median_d_R4": -0.996,
+      "n_R1": 242,
+      "n_R2": 254,
+      "n_R4": 294,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "all",
+      "snr": -5,
+      "median_d_R1": 0.1695,
+      "median_d_R2": -0.6766,
+      "median_d_R4": -0.9885,
+      "n_R1": 232,
+      "n_R2": 225,
+      "n_R4": 270,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "all",
+      "snr": 0,
+      "median_d_R1": 0.2168,
+      "median_d_R2": -0.4777,
+      "median_d_R4": -0.9726,
+      "n_R1": 235,
+      "n_R2": 238,
+      "n_R4": 272,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "anthro",
+      "snr": -15,
+      "median_d_R1": -0.3023,
+      "median_d_R2": -0.9682,
+      "median_d_R4": -0.9979,
+      "n_R1": 86,
+      "n_R2": 87,
+      "n_R4": 135,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "anthro",
+      "snr": -10,
+      "median_d_R1": 0.1146,
+      "median_d_R2": -0.8983,
+      "median_d_R4": -0.9935,
+      "n_R1": 84,
+      "n_R2": 90,
+      "n_R4": 187,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "anthro",
+      "snr": -5,
+      "median_d_R1": 0.0773,
+      "median_d_R2": -0.7734,
+      "median_d_R4": -0.9861,
+      "n_R1": 87,
+      "n_R2": 86,
+      "n_R4": 163,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "anthro",
+      "snr": 0,
+      "median_d_R1": 0.2088,
+      "median_d_R2": -0.6399,
+      "median_d_R4": -0.9706,
+      "n_R1": 92,
+      "n_R2": 93,
+      "n_R4": 163,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "weather",
+      "snr": -15,
+      "median_d_R1": -0.1528,
+      "median_d_R2": -0.9314,
+      "median_d_R4": -0.9985,
+      "n_R1": 116,
+      "n_R2": 120,
+      "n_R4": 103,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "weather",
+      "snr": -10,
+      "median_d_R1": 0.0691,
+      "median_d_R2": -0.76,
+      "median_d_R4": -0.9976,
+      "n_R1": 158,
+      "n_R2": 164,
+      "n_R4": 107,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "weather",
+      "snr": -5,
+      "median_d_R1": 0.2218,
+      "median_d_R2": -0.5864,
+      "median_d_R4": -0.9909,
+      "n_R1": 145,
+      "n_R2": 139,
+      "n_R4": 107,
+      "unit_pass": true
+    },
+    {
+      "arch": "cm",
+      "fold": "weather",
+      "snr": 0,
+      "median_d_R1": 0.2192,
+      "median_d_R2": -0.369,
+      "median_d_R4": -0.9809,
+      "n_R1": 143,
+      "n_R2": 145,
+      "n_R4": 109,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "all",
+      "snr": -15,
+      "median_d_R1": -0.1056,
+      "median_d_R2": -0.9761,
+      "median_d_R4": -0.9981,
+      "n_R1": 202,
+      "n_R2": 207,
+      "n_R4": 238,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "all",
+      "snr": -10,
+      "median_d_R1": 0.117,
+      "median_d_R2": -0.9093,
+      "median_d_R4": -0.9956,
+      "n_R1": 242,
+      "n_R2": 254,
+      "n_R4": 294,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "all",
+      "snr": -5,
+      "median_d_R1": 0.2254,
+      "median_d_R2": -0.7707,
+      "median_d_R4": -0.9869,
+      "n_R1": 232,
+      "n_R2": 225,
+      "n_R4": 270,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "all",
+      "snr": 0,
+      "median_d_R1": 0.2716,
+      "median_d_R2": -0.5663,
+      "median_d_R4": -0.9696,
+      "n_R1": 235,
+      "n_R2": 238,
+      "n_R4": 272,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "anthro",
+      "snr": -15,
+      "median_d_R1": -0.0404,
+      "median_d_R2": -0.978,
+      "median_d_R4": -0.9975,
+      "n_R1": 86,
+      "n_R2": 87,
+      "n_R4": 135,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "anthro",
+      "snr": -10,
+      "median_d_R1": 0.3019,
+      "median_d_R2": -0.923,
+      "median_d_R4": -0.9913,
+      "n_R1": 84,
+      "n_R2": 90,
+      "n_R4": 187,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "anthro",
+      "snr": -5,
+      "median_d_R1": 0.2654,
+      "median_d_R2": -0.7723,
+      "median_d_R4": -0.9815,
+      "n_R1": 87,
+      "n_R2": 86,
+      "n_R4": 163,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "anthro",
+      "snr": 0,
+      "median_d_R1": 0.3761,
+      "median_d_R2": -0.578,
+      "median_d_R4": -0.9652,
+      "n_R1": 92,
+      "n_R2": 93,
+      "n_R4": 163,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "weather",
+      "snr": -15,
+      "median_d_R1": -0.1461,
+      "median_d_R2": -0.9754,
+      "median_d_R4": -0.9987,
+      "n_R1": 116,
+      "n_R2": 120,
+      "n_R4": 103,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "weather",
+      "snr": -10,
+      "median_d_R1": 0.0976,
+      "median_d_R2": -0.8879,
+      "median_d_R4": -0.9973,
+      "n_R1": 158,
+      "n_R2": 164,
+      "n_R4": 107,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "weather",
+      "snr": -5,
+      "median_d_R1": 0.2106,
+      "median_d_R2": -0.7704,
+      "median_d_R4": -0.9906,
+      "n_R1": 145,
+      "n_R2": 139,
+      "n_R4": 107,
+      "unit_pass": true
+    },
+    {
+      "arch": "dfn3",
+      "fold": "weather",
+      "snr": 0,
+      "median_d_R1": 0.2312,
+      "median_d_R2": -0.5395,
+      "median_d_R4": -0.9812,
+      "n_R1": 143,
+      "n_R2": 145,
+      "n_R4": 109,
+      "unit_pass": true
+    }
+  ],
+  "verdict": "PASS"
+}
