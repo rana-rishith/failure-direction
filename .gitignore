@@ -97,3 +97,8 @@ results/universal/u3_features_burst.csv
 
 # private notes: must never reach the public repo
 docs/PRIVATE_*
+
+# probe per-utterance dumps: 2,280 rows x 46 tags, regenerable with
+# `python -m src.probe.rescore`. summary.csv/summary.md and reconciliation.md
+# carry every number the paper quotes. Same rule as results/labels_active/*__*.csv.
+results/probe/*/rows.csv
