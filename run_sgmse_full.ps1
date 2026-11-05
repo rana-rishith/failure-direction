@@ -1,28 +1,34 @@
 # Enhance the 1,880 frozen-split utterances SGMSE+ has not done yet, then score
 # all 2,280 through probe(). Resumable: rerun after any interruption.
 #
-# Waits for the 44-tag rescore to exit first. SGMSE+ needs most of the 8 GB and
-# the rescore holds ~6.2 GB of the 4060's 8,188 MiB while it runs.
+# Waits for any other GPU python job to exit first. SGMSE+ needs most of the 8 GB,
+# and sharing the 4060 with the probe rescore or an sgmse_seg fine-tune drags
+# enhancement from 33 s/file to 330-440 s/file, i.e. 170 h rather than 17.
 # Budget ~17 h at the pilot's median of 32.7 s per file (~37 h at its mean).
+param([switch]$Now)   # -Now: start even while another GPU job holds the card
 $ErrorActionPreference = "Stop"
 $SG   = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\sgmse"
 $REPO = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\repo-failure-direction"
 $SGPY = "C:\Users\ranar\anaconda3\envs\sgmse\python.exe"
 $FD   = "C:\Users\ranar\anaconda3\envs\faildir"
 
-function RescoreRunning {
+function GpuBusy {
+    # Our own enhance call is excluded by matching only the two jobs that contend
+    # for the card: the probe rescore (its own --wav-maps scoring pass is CPU) and
+    # an sgmse_seg fine-tune.
     $p = Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue |
-         Where-Object { $_.CommandLine -like "*src.probe.rescore*" -and $_.CommandLine -notlike "*wav-maps*" }
+         Where-Object { ($_.CommandLine -like "*src.probe.rescore*" -and $_.CommandLine -notlike "*wav-maps*") `
+                        -or $_.CommandLine -like "*sgmse_seg.py*" }
     return [bool]$p
 }
 
 $waited = 0
-while ((RescoreRunning) -and $waited -lt 54000) {   # give up waiting after 15 h
-    if ($waited % 600 -eq 0) { Write-Output ("waiting for the rescore to finish... " + [int]($waited/60) + " min") }
+while ((GpuBusy) -and -not $Now -and $waited -lt 172800) {   # give up waiting after 48 h
+    if ($waited % 600 -eq 0) { Write-Output ("waiting for the GPU to free up... " + [int]($waited/60) + " min") }
     Start-Sleep -Seconds 60; $waited += 60
 }
-if (RescoreRunning) { Write-Output "rescore still running after 15 h; not starting SGMSE+"; exit 1 }
-Write-Output ("rescore clear after " + [int]($waited/60) + " min; starting SGMSE+ " + (Get-Date -Format "HH:mm:ss"))
+if ((GpuBusy) -and -not $Now) { Write-Output "GPU still busy after 48 h; not starting SGMSE+"; exit 1 }
+Write-Output ("GPU clear after " + [int]($waited/60) + " min; starting SGMSE+ " + (Get-Date -Format "HH:mm:ss"))
 
 $todo = (Get-ChildItem "$SG\full_in" -Filter *.wav).Count
 Write-Output "full_in holds $todo wavs to enhance"
