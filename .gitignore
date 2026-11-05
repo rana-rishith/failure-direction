@@ -93,3 +93,6 @@ results/segment/plan_*.csv
 
 # U3 feature cache: regenerated from results/xcorpus/mix, not a result.
 results/universal/u3_features.csv
+
+# private notes: must never reach the public repo
+docs/PRIVATE_*
