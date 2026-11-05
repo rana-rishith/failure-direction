@@ -91,8 +91,9 @@ results/claim3c/*/*/predictions/
 results/segment/*__*.csv
 results/segment/plan_*.csv
 
-# U3 feature cache: regenerated from results/xcorpus/mix, not a result.
+# U3 feature caches: regenerated from results/xcorpus/mix, not a result.
 results/universal/u3_features.csv
+results/universal/u3_features_burst.csv
 
 # private notes: must never reach the public repo
 docs/PRIVATE_*
