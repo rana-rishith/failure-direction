@@ -25,6 +25,9 @@ def test_thresholds_parsed_from_yaml(cfg):
     assert U._after(cfg["U1_failure_class"]["classes"]["inert"], "<") == 0.30   # nr < 0.30
     assert U._after(cfg["U1_failure_class"]["classes"]["hallucinate"], ">=") == 0.05
     assert U._after(cfg["U3_within_condition"]["pass_if"][1], ">=") / 100 == 0.75
+    # stage_u3_transfer's pass bar: _after takes the FIRST >= on the line, so an SNR
+    # clause worded ahead of the type count would silently replace it
+    assert U._after(cfg["U3_transfer"]["pass_if"], ">=") == 3                  # 3 of 5 types
     # the 1 in "U1_novelty_monotone" must not be read as the threshold
     assert U._after(cfg["U2_beyond_bounded"]["pass_if"], ">=") == 2
     assert cfg["definitions"]["snr_low"] == [-15, -10, -5, 0]
