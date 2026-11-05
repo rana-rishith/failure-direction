@@ -47,7 +47,8 @@ unchanged. Nothing in the code may weaken that statement.
 | `U3_within_condition` | **FAIL** | `u3_verdict.json` |
 | `M0_oracle_headroom` | **FAIL**, all 4 cells | `results/method/m0_summary.csv` |
 | `M1_predicted_gamma` | blocked by M0's `requires`, never run | nowhere |
-| `U3_transfer` | **declared, never run, never reported** | nowhere |
+| `U3_transfer` | **FAIL**, 2 of 5 MarVEN types | `u3_transfer_verdict.json`, `u3_transfer_report.md` |
+| `R3` (standalone gate) | `intermediate`, 9 of 9 model-seed cells | `results/r3/report.md` |
 | `D_diversity_control` | run | `results/diverse/` |
 | `C3_active` / `C3b` / `C3c` | FAIL / FAIL / HOLDS | `results/claim3*/` |
 
@@ -56,8 +57,11 @@ Earlier claims 1 and 2 are settled and written up in the section plans.
 ### Numbers worth knowing
 
 - **U1**: median `d` decreases R1 > R2 > R4 in 4 of 4 low-SNR levels for both bounded
-  masks. R3 is defined in the yaml and was **not** evaluated; the runner records
-  `"R3": "not in this stage"`.
+  masks. R3 is **not** a rung in this ordering and the runner records
+  `"R3": "not in this stage"`. The yaml scoped it conditionally ("R3 added where the
+  corpus allows") and `configs/gate_r3.yaml` pre-stated why the corpus does not allow it:
+  MarVEN has one recording per type, and the DeepShip substitute confounds channel shift
+  with recording novelty. R3 ran as its own gate instead; see `results/r3/report.md`.
 - **U2**: `cm` and `dfn3` each clear 4 of 4 levels, both folds. `dfn3` pooled medians at
   −15 dB are R1 −0.106, R2 −0.976, R4 −0.998. SGMSE+ (the `generative` class) is
   unmeasured and recorded under `classes_missing`.
@@ -99,11 +103,12 @@ December 2026; see `docs/PRIVATE_ms_application_plan.md`, which must not be comm
 Two consequences for how the work is finished:
 
 1. **Every gate declared in the published yaml needs a reported outcome**, including
-   "not run, and why". `U3_transfer` and the R3 rung are currently silent, and a
-   reviewer who opens the config file will count. A pre-registration with a silent gate
-   is selective reporting.
-2. SGMSE+ and R3 are table stakes at this venue, not optional polish. Better run now
-   than in a revision on a reviewer's clock.
+   "not run, and why". A pre-registration with a silent gate is selective reporting.
+   As of 2026-11-05 `U3_transfer` is run and reported (FAIL) and the R3 rung's non-run
+   is reported with its pre-registered reason. **SGMSE+ (the `generative` class) is the
+   one still silent.**
+2. SGMSE+ is table stakes at this venue, not optional polish. Better run now than in a
+   revision on a reviewer's clock.
 
 ## Paper state
 
