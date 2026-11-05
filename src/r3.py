@@ -10,6 +10,7 @@ PowerShell, from the repo root, faildir env:
 from __future__ import annotations
 
 import argparse
+import re
 import zlib
 from pathlib import Path
 
@@ -18,12 +19,29 @@ import numpy as np
 import pandas as pd
 import soundfile as sf
 import torch
+import yaml
 
 from src import models as M
 from src.diverse import analyse, derive, mix
 
 OUT = C.EVAL / "r3"
 SHIPS = ("Cargo", "Tanker", "Passengership")
+GATE_PATH = Path(__file__).resolve().parents[1] / "configs" / "gate_r3.yaml"
+
+
+def load_gate() -> dict:
+    with open(GATE_PATH, encoding="utf-8") as fh:
+        return yaml.safe_load(fh)["r3"]
+
+
+def _after(s, op: str) -> float:
+    """The number the yaml writes immediately after a comparison. Copied from
+    scripts/run_universal.py:_after rather than shared, to keep this change off the
+    runner that stamped its code_commit into the published U verdicts."""
+    m = re.search(re.escape(op) + r"\s*(-?\d+(?:\.\d+)?)", str(s))
+    if m is None:
+        raise SystemExit(f"no {op!r} threshold in the yaml text: {s!r}")
+    return float(m.group(1))
 
 
 def decimate2(x: np.ndarray) -> np.ndarray:
@@ -94,7 +112,11 @@ def run(models, cond: str, frame: pd.DataFrame, pool: Pool | None, dev, out: Pat
     return d
 
 
-def report(gate_contrast=0.20, suffix=""):
+def report(suffix=""):
+    gate = load_gate()
+    gate_contrast = _after(gate["validity"], ">=")
+    type_level = _after(gate["criteria"]["type_level"], ">=")
+    recording_level = _after(gate["criteria"]["recording_level"], "<=")
     d = pd.concat([pd.read_csv(f) for f in sorted(OUT.glob("*.csv")) if f.stem not in ("summary", "verdict", "by_snr")])
     d = derive(d, "_g")  # d, noise_removed = level-aligned; plain added below
     d["d_plain"] = (d.r_over - d.r_under) / (d.r_over + d.r_under + 1e-8)
@@ -115,7 +137,8 @@ def report(gate_contrast=0.20, suffix=""):
         p, con = row["p_noise_removed"], row["noise_removed_R1"] - row["noise_removed_R4"]
         row["contrast"] = con
         row["class"] = ("no_contrast" if con < gate_contrast else
-                        "type_level" if p >= 0.67 else "recording_level" if p <= 0.33 else "intermediate")
+                        "type_level" if p >= type_level else
+                        "recording_level" if p <= recording_level else "intermediate")
         v.append(row)
     v = pd.DataFrame(v)
     cls = v["class"].value_counts()
