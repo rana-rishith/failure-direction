@@ -111,14 +111,44 @@ So U3's failure is not a feature problem or a fitter problem, and now not a
 train/test-split problem either. Three gates have looked at it from three angles and
 landed in the same place.
 
+## Post-hoc sensitivity: 45 features
+
+`results/universal/u3_transfer_sens_feats45_verdict.json`, `post_hoc: true`, code commit
+`77302a4`. The 33 base features plus the 12 burst features of `src/features_burst.py`,
+whose `bst_sub150` carries the largest split share in all six C3c models. Thresholds,
+arms and the leave-one-type-out design are unchanged; only the feature set differs. The
+ridge arm is reported as `ridge_45` so it can never be mistaken for the registered
+`ridge_33`.
+
+**Also FAIL, and still 2 of 5. But not the same two.** `hurricane` and `rainfall` pass;
+`bubble_curtain`, which passed at 33, no longer does.
+
+| held-out type | feats_only 33 | feats_only 45 | ridge_45 | snr+logE | pass at 45 |
+|---|---|---|---|---|---|
+| bubble_curtain | 0.258 | **0.319** | 0.332 | 0.252 | no, ridge_45 wins |
+| hurricane | -0.105 | **0.182** | -0.059 | -0.401 | **yes** |
+| rainfall | 0.111 | **0.166** | -0.061 | 0.040 | **yes** |
+| large_commercial_ship | 0.074 | 0.048 | 0.149 | 0.090 | no |
+| lightning | -0.036 | -0.015 | 0.208 | 0.259 | no |
+
+The burst features do help the predictor: `feats_only` rises on 4 of 5 types, most of all
+on `hurricane`, from -0.105 to 0.182, which is the difference between worse than chance
+and weakly informative. But they help the ridge baseline on the same information, and on
+`bubble_curtain` they help it more, 0.112 to 0.332 against the predictor's 0.258 to 0.319.
+That is what flips the type. The count against the threshold does not move.
+
+Cross-corpus is flat: 0.499 to 0.716 at 45 features against 0.518 to 0.733 at 33, all six
+classes still clearing both baselines. The asymmetry above is not a feature-set artifact.
+
+So the feature set that makes Claim 3 work does not rescue U3_transfer. Taken with the
+canonical-fitter sensitivity on `U3_within_condition`, which came out slightly worse, the
+failure is not a feature problem and not a fitter problem.
+
+**This does not change the verdict**, which is registered at 33 features and recorded in
+`u3_transfer_verdict.json`. Those files were not rewritten by this run.
+
 ## Not done
 
-- **The 45-feature sensitivity.** Approved, not run. `results/universal/u3_features.csv`
-  holds the 33 base features plus WADA-SNR and nothing else, so the 12 burst features
-  from `src/features_burst.py` need a fresh extraction pass over all 4,680 saved mixtures
-  before a `--sens` arm can use them. `bst_sub150` has the largest split share in all six
-  C3c models, so this is worth doing; it is a feature-extraction job, not a threshold
-  question, and it cannot change the verdict above, which is registered at 33.
 - **A speaker-disjoint variant**, for the reason given above.
 
 ## Reproduce
