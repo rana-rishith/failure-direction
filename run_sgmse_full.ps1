@@ -37,7 +37,8 @@ Write-Output "full_in holds $todo wavs to enhance"
 #    (sampler_type pc -> ode for SBVESDE, N 30, corrector ald, snr 0.5, t_eps 0.03)
 & $SGPY -u "$SG\enhance_resumable.py" --test_dir "$SG\full_in" `
     --enhanced_dir "$SG\full_out" --ckpt "$SG\ckpt\SB_16k.pt"
-Write-Output ("enhancement returned exit code " + $LASTEXITCODE)
+$rc = $LASTEXITCODE          # $ErrorActionPreference does not cover a native exit code
+Write-Output ("enhancement returned exit code " + $rc)
 
 # 2. failures: the log records every attempt; missing outputs are the real test
 $made = (Get-ChildItem "$SG\full_out" -Filter *.wav -ErrorAction SilentlyContinue).Count
@@ -56,6 +57,14 @@ $missing = @(Get-ChildItem "$SG\full_in" -Filter *.wav | Where-Object {
     -not (Test-Path (Join-Path "$SG\full_out" $_.Name)) })
 Write-Output ("missing outputs: " + $missing.Count)
 if ($missing.Count) { $missing | Select-Object -First 15 | ForEach-Object { Write-Output ("  " + $_.Name) } }
+
+# Stop here rather than score a short population: step 3 runs rescore --force, which
+# bypasses done() and would overwrite results/probe/sgmse/summary.* with whatever
+# fraction of the split got enhanced. Rerun this script to resume; it is idempotent.
+if ($rc -ne 0 -or $missing.Count -gt 0) {
+    Write-Output "`nNOT scoring: enhancement is incomplete. Rerun to resume."
+    exit 1
+}
 
 # 3. score all 2,280 as ONE population: the 400 pilot outputs plus the new ones
 $env:PATH = "$FD;$FD\Library\mingw-w64\bin;$FD\Library\usr\bin;$FD\Library\bin;$FD\Scripts;$FD\bin;" + $env:PATH
