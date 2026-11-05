@@ -164,3 +164,14 @@ def test_sens_is_refused_outside_u3():
     and must not be silently ignored there."""
     with pytest.raises(SystemExit):
         U.main(["--gate", "u1class", "--sens", "canonical_lgbm"])
+
+
+def test_r3_thresholds_parsed_from_yaml():
+    """src/r3.py reads its three cut points out of configs/gate_r3.yaml prose, so the
+    published R3 verdict cannot drift from the pre-registration without this failing."""
+    from src import r3 as R
+
+    g = R.load_gate()
+    assert R._after(g["validity"], ">=") == 0.20                      # contrast floor
+    assert R._after(g["criteria"]["type_level"], ">=") == 0.67
+    assert R._after(g["criteria"]["recording_level"], "<=") == 0.33
