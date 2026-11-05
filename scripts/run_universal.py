@@ -405,6 +405,106 @@ def stage_u3(cfg: dict, sha: str, a) -> None:
                   cells, passed, notes)
 
 
+
+# -------------------------------------------------------- U3 transfer ----
+def stage_u3_transfer(cfg: dict, sha: str, a) -> None:
+    """Leave-one-noise-type-out: the predictor never sees the held-out type and the
+    enhancer is fixed, so no model retrains and no mixture is re-rendered.
+
+    The yaml's design line holds out the type and nothing else. MarVEN carries 10
+    speakers and every type carries all of them, so every test speaker is also a
+    training speaker. That is the registered design, not an oversight here; it is
+    recorded under notes.speaker_overlap so the verdict cannot be read as
+    speaker-disjoint.
+    """
+    from src.claim3 import within
+    u = cfg["U3_transfer"]
+    min_types = int(_after(u["pass_if"], ">="))
+    conds = [c for cs in CORPORA.values() for c in cs]
+    F = u3_features(conds, a.no_resume)
+    d = u3_labels(conds, a.tag).merge(F, on=["cond", "uid"], validate="1:1")
+    feats = [c for c in F.columns if c not in ("cond", "uid", "wada_snr")]
+    arms = {"feats_only_lgbm": ("lgbm", feats), "ridge_33": ("ridge", feats),
+            "baseline_snr_logE": ("ridge", ["snr", "log_e_noisy"]),
+            "wada_snr": ("ridge", ["wada_snr"])}
+    # The yaml writes "> baseline rho" without naming an arm. Resolved to both of
+    # U3_within_condition's baselines, the stricter of the two readings, so the
+    # resolution cannot inflate a pass. wada_snr is carried descriptively.
+    rivals = ["ridge_33", "baseline_snr_logE"]
+
+    def loto(g: pd.DataFrame, corpus: str, col: str = "noise_type") -> list[dict]:
+        # noise_type names the MarVEN type on every row, DEMAND and FSD50K rows
+        # included, because the xcorpus mixtures reuse it. So the held-out class for
+        # those corpora is cond, which is what stage_u3 groups their cells by too.
+        out = []
+        for ho in sorted(g[col].unique()):
+            tr = g[g[col] != ho]
+            te = g[g[col] == ho].reset_index(drop=True)
+            if tr.empty or len(te) < 25:
+                print(f"u3_transfer {corpus}/{ho}: too few rows, skipped")
+                continue
+            preds = {k: _fit(kind, cols, tr, te, C.SEED)
+                     for k, (kind, cols) in arms.items()}
+            w = within(te, preds, by=["snr"])
+            if w.empty:
+                print(f"u3_transfer {corpus}/{ho}: no SNR cell reached min_n, skipped")
+                continue
+            mean = {k: float(w[k].mean()) for k in arms}
+            row = {"corpus": corpus, "heldout_class": ho, "heldout_by": col,
+                   "n_snr_cells": len(w), "n_test_rows": len(te),
+                   "n_train_rows": len(tr)}
+            row |= {f"mean_rho_{k}": round(mean[k], 4) for k in arms}
+            row |= {f"beats_{k}": bool(mean["feats_only_lgbm"] > mean[k]) for k in rivals}
+            row["type_pass"] = all(row[f"beats_{k}"] for k in rivals)
+            out.append(row)
+            print(f"u3_transfer {corpus}/{ho}: {len(w)} snr cells, mean rho "
+                  + ", ".join(f"{k}={mean[k]:.3f}" for k in arms))
+        return out
+
+    marven = d[d.cond == "marven"].reset_index(drop=True)
+    expected = sorted(C.WEATHER + C.ANTHRO)
+    assert sorted(marven.noise_type.unique()) == expected,         f"MarVEN types drifted from the yaml's 5: {sorted(marven.noise_type.unique())}"
+    cells = loto(marven, "marven")
+    n_pass = sum(c["type_pass"] for c in cells)
+    passed = n_pass >= min_types
+
+    # The yaml's report: line asks for the same test on DEMAND / FSD50K held-out
+    # classes, descriptive. These rows carry no weight in the verdict.
+    for corpus, cs in CORPORA.items():
+        if corpus == "marven":
+            continue
+        g = d[d.cond.isin(cs)].reset_index(drop=True)
+        if g.empty:
+            print(f"u3_transfer: no rows for {corpus}, skipped")
+            continue
+        cells += loto(g, corpus, "cond")
+
+    notes = {
+        "types_passed": f"{n_pass} of {len(expected)}",
+        "verdict_basis": "MarVEN rows only; DEMAND / FSD50K cells are descriptive",
+        "heldout_class": "MarVEN holds out noise_type (5 types). DEMAND and FSD50K hold "
+                         "out cond (3 each), because noise_type carries the MarVEN type "
+                         "on every row of every corpus and is not their noise class.",
+        "baseline_resolved_to": rivals,
+        "baseline_ambiguity": "U3_transfer pass_if says '> baseline rho' and names no "
+                              "arm. Resolved to both baselines of U3_within_condition, "
+                              "the stricter reading. No threshold was changed.",
+        "features": f"{len(feats)} base features (src.features), the set "
+                    "U3_within_condition registered as ridge_33",
+        "split": "leave-one-noise-type-out; predictor refit per held-out type",
+        "speaker_overlap": "the registered design holds out the noise type only. "
+                           "MarVEN has 10 speakers and every type carries all of them, "
+                           "so test speakers are training speakers. Not speaker-disjoint.",
+        "enhancer": "fixed; no model retrained and no mixture re-rendered",
+        "label": "log10(r_over_x), level-aligned (_g) output STFT",
+        "cells": "within-SNR Spearman, min 25 rows per SNR cell",
+    }
+    write_verdict("u3_transfer", cfg, sha,
+                  {"design": u["design"], "pass_if": u["pass_if"],
+                   "report": u["report"], "min_types": min_types,
+                   "n_marven_types": len(expected), "enhancer_tag": a.tag},
+                  cells, passed, notes)
+
 # ------------------------------------------------------------------- U2 ----
 # The yaml names the non-bounded classes in prose; these are the checkpoint prefixes
 # that stand for them. complex_mask -> cm is configs/gate_amend_cm.yaml, committed
@@ -456,7 +556,8 @@ def stage_u2(cfg: dict, sha: str, a) -> None:
                                   "and R2 are the same measurement"})
 
 
-STAGES = {"u1": stage_u1, "u1class": stage_u1class, "u3": stage_u3, "u2": stage_u2}
+STAGES = {"u1": stage_u1, "u1class": stage_u1class, "u3": stage_u3, "u2": stage_u2,
+          "u3_transfer": stage_u3_transfer}
 ORDER = ("u1", "u1class", "u3")
 
 
