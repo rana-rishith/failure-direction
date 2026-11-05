@@ -18,31 +18,7 @@ import config as C  # noqa: I001  (must precede torch)
 import numpy as np
 import torch
 
-from src.probe import SPLIT_DIR, freeze_split, probe
-
-HEARD = {"weather": C.WEATHER, "anthro": C.ANTHRO}
-
-
-def heard_types(tag: str):
-    """MarVEN types this tag was trained on. demand / fsd / dns models heard
-    none of them, which is the point of those arms."""
-    for fam, types in HEARD.items():
-        if f"_{fam}" in tag:
-            return types
-    return ()
-
-
-def model_fn(tag: str, dev: str):
-    from src import models as M
-    model = M.load_model(tag.split("_")[0], tag, kind="best", device=dev)
-    model.eval()
-
-    @torch.no_grad()
-    def fn(x: np.ndarray) -> np.ndarray:
-        xt = torch.from_numpy(np.ascontiguousarray(x, np.float32))[None].to(dev)
-        est, _ = model(xt)
-        return est[0].float().cpu().numpy()
-    return fn
+from src.probe import SPLIT_DIR, freeze_split, heard_types, model_fn, probe
 
 
 def main(argv=None) -> None:
