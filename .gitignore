@@ -102,3 +102,9 @@ docs/PRIVATE_*
 # `python -m src.probe.rescore`. summary.csv/summary.md and reconciliation.md
 # carry every number the paper quotes. Same rule as results/labels_active/*__*.csv.
 results/probe/*/rows.csv
+
+# the manuscript stays local. These match only paper/ own files, not its
+# subdirectories, so the committed paper/figs/ and paper/figs_src/ are untouched.
+paper/*.tex
+paper/*.pdf
+paper/_old/
