@@ -13,6 +13,7 @@ directory of enhanced wavs instead; see src.probe.probe(wav_dir=...).
 from __future__ import annotations
 
 import argparse
+import json
 import time
 from pathlib import Path
 
@@ -22,21 +23,11 @@ import numpy as np
 import pandas as pd
 import torch
 
-from src.probe import SPLIT_DIR, load_split, probe, write_report
+from src.probe import (SPLIT_DIR, heard_types, load_split, model_fn, probe, summarise,
+                       write_report)
 
 REF = C.EVAL / "xcorpus" / "eval" / "marven.csv"
 OUT = C.EVAL / "probe"
-HEARD = {"weather": C.WEATHER, "anthro": C.ANTHRO}
-
-
-def heard_types(tag: str):
-    for fam, types in HEARD.items():
-        if f"_{fam}" in tag:
-            return types
-    if "_loto_" in tag:                      # leave-one-type-out: heard the rest of weather
-        held = tag.split("_loto_")[1].split("_s")[0]
-        return tuple(t for t in C.WEATHER if t != held)
-    return ()                                # demand / fsd / dns: no MarVEN type heard
 
 
 def uid_from_name(name: str) -> str:
@@ -82,16 +73,6 @@ def reference_tags() -> list[str]:
     return sorted(pd.read_csv(REF, usecols=["tag"]).tag.unique())
 
 
-def model_fn(tag: str, dev: str):
-    from src import models as M
-    model = M.load_model(tag.split("_")[0], tag, kind="best", device=dev)
-    model.eval()
-
-    @torch.no_grad()
-    def fn(x: np.ndarray) -> np.ndarray:
-        xt = torch.from_numpy(np.ascontiguousarray(x, np.float32))[None].to(dev)
-        return model(xt)[0][0].float().cpu().numpy()
-    return fn
 
 
 def done(tag: str, n: int) -> bool:
@@ -119,10 +100,28 @@ def main(argv=None) -> None:
     p.add_argument("--split", default="marven_test_v1")
     p.add_argument("--device", default=None)
     p.add_argument("--force", action="store_true")
+    p.add_argument("--summaries-only", action="store_true",
+                   help="recompute summary.csv and summary.md from each tag's saved "
+                        "rows.csv, with no model and no GPU: for a change in the "
+                        "summary layer, which must not cost a full rescore")
     a = p.parse_args(argv)
 
     dev = a.device or C.device()
     n = len(load_split(a.split))
+
+    if a.summaries_only:
+        spec = json.loads((SPLIT_DIR / f"{a.split}.json").read_text())
+        tags = sorted(d.name for d in OUT.iterdir() if (d / "rows.csv").exists())
+        for i, tag in enumerate(tags):
+            rows = pd.read_csv(OUT / tag / "rows.csv")
+            rep = {"rows": rows, "summary": summarise(rows, heard_types(tag)),
+                   "split": a.split, "sha256": spec["sha256"],
+                   "n": len(rows), "n_split": n, "coverage": len(rows) / n}
+            write_report(rep, OUT / tag)
+            print(f"[{i+1}/{len(tags)}] {tag}: summary rebuilt from {len(rows)} saved rows",
+                  flush=True)
+        print(f"\n{len(tags)} summaries rebuilt -> {OUT}")
+        return
     only_wavs = bool(a.wav_dirs or a.wav_maps) and a.tags is None
     jobs: list[tuple[str, str | None, dict | None]] = [
         (t, None, None) for t in ([] if only_wavs else (a.tags or reference_tags()))]
