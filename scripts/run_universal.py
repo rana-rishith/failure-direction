@@ -287,6 +287,42 @@ def u3_features(conds, fresh: bool = False) -> pd.DataFrame:
     return F
 
 
+def u3_features_burst(conds, fresh: bool = False) -> pd.DataFrame:
+    """The 12 burst features of src/features_burst.py on the same saved mixtures.
+
+    Kept in its own cache so u3_features.csv, which backs the registered 33-feature
+    verdicts, is never rewritten. Only the feats45 sensitivity reads this.
+    """
+    import soundfile as sf
+
+    from src import features as FT
+    from src import features_burst as FB
+    man = pd.read_csv(XC / "manifest.csv")
+    man = man[man.cond.isin(conds)].reset_index(drop=True)
+    cache = OUT / "u3_features_burst.csv"
+    F = (pd.read_csv(cache) if cache.exists() and not fresh
+         else pd.DataFrame(columns=["cond", "uid"]))
+    have = set(zip(F.cond, F.uid))
+    new = []
+    for i, r in enumerate(man.itertuples()):
+        if (r.cond, r.uid) in have:
+            continue
+        x, sr = sf.read(r.noisy, dtype="float32")
+        assert sr == C.SR, f"{r.noisy}: {sr} Hz"
+        if x.ndim > 1:
+            x = x.mean(axis=1)
+        new.append({"cond": r.cond, "uid": r.uid, **FB.feats(x)})
+        if (i + 1) % 200 == 0:
+            print(f"  u3 burst features {i + 1}/{len(man)}", flush=True)
+    if new:
+        F = pd.concat([F, pd.DataFrame(new)], ignore_index=True)
+        OUT.mkdir(parents=True, exist_ok=True)
+        F.to_csv(cache, index=False)
+    FT.assert_reference_free([c for c in F.columns if c not in ("cond", "uid")])
+    print(f"u3 burst features: {len(F)} rows ({len(new)} new)")
+    return F
+
+
 def u3_labels(conds, tag: str) -> pd.DataFrame:
     """y = log10 r_over_x for one fixed enhancer. r_over_x goes negative when the model
     sits below the passthrough floor, which has no log; those rows are floored to a
@@ -418,19 +454,25 @@ def stage_u3_transfer(cfg: dict, sha: str, a) -> None:
     speaker-disjoint.
     """
     from src.claim3 import within
+    sens = getattr(a, "sens", None)
     u = cfg["U3_transfer"]
     min_types = int(_after(u["pass_if"], ">="))
     conds = [c for cs in CORPORA.values() for c in cs]
     F = u3_features(conds, a.no_resume)
     d = u3_labels(conds, a.tag).merge(F, on=["cond", "uid"], validate="1:1")
     feats = [c for c in F.columns if c not in ("cond", "uid", "wada_snr")]
-    arms = {"feats_only_lgbm": ("lgbm", feats), "ridge_33": ("ridge", feats),
+    if sens == "feats45":
+        B = u3_features_burst(conds, a.no_resume)
+        d = d.merge(B, on=["cond", "uid"], validate="1:1")
+        feats += [c for c in B.columns if c not in ("cond", "uid")]
+    ridge = f"ridge_{len(feats)}"
+    arms = {"feats_only_lgbm": ("lgbm", feats), ridge: ("ridge", feats),
             "baseline_snr_logE": ("ridge", ["snr", "log_e_noisy"]),
             "wada_snr": ("ridge", ["wada_snr"])}
     # The yaml writes "> baseline rho" without naming an arm. Resolved to both of
     # U3_within_condition's baselines, the stricter of the two readings, so the
     # resolution cannot inflate a pass. wada_snr is carried descriptively.
-    rivals = ["ridge_33", "baseline_snr_logE"]
+    rivals = [ridge, "baseline_snr_logE"]
 
     def loto(g: pd.DataFrame, corpus: str, col: str = "noise_type") -> list[dict]:
         # noise_type names the MarVEN type on every row, DEMAND and FSD50K rows
@@ -489,8 +531,10 @@ def stage_u3_transfer(cfg: dict, sha: str, a) -> None:
         "baseline_ambiguity": "U3_transfer pass_if says '> baseline rho' and names no "
                               "arm. Resolved to both baselines of U3_within_condition, "
                               "the stricter reading. No threshold was changed.",
-        "features": f"{len(feats)} base features (src.features), the set "
-                    "U3_within_condition registered as ridge_33",
+        "features": f"{len(feats)} features"
+                    + (" (src.features 33 plus src.features_burst 12)" if sens == "feats45"
+                       else " (src.features), the set U3_within_condition registered "
+                            "as ridge_33"),
         "split": "leave-one-noise-type-out; predictor refit per held-out type",
         "speaker_overlap": "the registered design holds out the noise type only. "
                            "MarVEN has 10 speakers and every type carries all of them, "
@@ -499,7 +543,16 @@ def stage_u3_transfer(cfg: dict, sha: str, a) -> None:
         "label": "log10(r_over_x), level-aligned (_g) output STFT",
         "cells": "within-SNR Spearman, min 25 rows per SNR cell",
     }
-    write_verdict("u3_transfer", cfg, sha,
+    if sens:
+        # A post-hoc variant is not the gate. Its own file, its own notes, and it never
+        # touches u3_transfer_verdict.json, which was decided before this ran.
+        notes |= {"post_hoc": True, "sensitivity": sens,
+                  "pre_registered_verdict": "u3_transfer_verdict.json",
+                  "deviation": "the feature set is the 33 base features plus the 12 "
+                               "burst features of src/features_burst.py. The yaml "
+                               "registered 33 by naming its arm ridge_33. Thresholds, "
+                               "arms and the leave-one-type-out design are unchanged."}
+    write_verdict(f"u3_transfer_sens_{sens}" if sens else "u3_transfer", cfg, sha,
                   {"design": u["design"], "pass_if": u["pass_if"],
                    "report": u["report"], "min_types": min_types,
                    "n_marven_types": len(expected), "enhancer_tag": a.tag},
@@ -558,6 +611,7 @@ def stage_u2(cfg: dict, sha: str, a) -> None:
 
 STAGES = {"u1": stage_u1, "u1class": stage_u1class, "u3": stage_u3, "u2": stage_u2,
           "u3_transfer": stage_u3_transfer}
+SENS_GATE = {"canonical_lgbm": "u3", "feats45": "u3_transfer"}
 ORDER = ("u1", "u1class", "u3")
 
 
@@ -570,16 +624,17 @@ def main(argv=None) -> None:
     p.add_argument("--tag", default="b1_weather", help="U3 enhancer whose r_over_x is the label")
     p.add_argument("--allow-cpu", action="store_true",
                    help="let U1 train on the CPU (about 25 h for the four models)")
-    p.add_argument("--sens", choices=["canonical_lgbm"],
-                   help="post-hoc U3 sensitivity variant, written to its own "
-                        "u3_sens_<name>_verdict.json; the pre-registered u3 verdict is "
+    p.add_argument("--sens", choices=[*SENS_GATE],
+                   help="post-hoc sensitivity variant, written to its own "
+                        "<gate>_sens_<name>_verdict.json; the pre-registered verdict is "
                         "left alone")
     a = p.parse_args(argv)
-    if a.sens and a.gate != "u3":
-        p.error("--sens is a U3 variant; use it with --gate u3")
+    if a.sens and SENS_GATE[a.sens] != a.gate:
+        p.error(f"--sens {a.sens} is a {SENS_GATE[a.sens]} variant; "
+                f"use it with --gate {SENS_GATE[a.sens]}")
     cfg, sha = load_gate()
     for gate in (ORDER if a.gate == "all" else [a.gate]):
-        gid = f"u3_sens_{a.sens}" if gate == "u3" and a.sens else gate
+        gid = f"{gate}_sens_{a.sens}" if a.sens and SENS_GATE[a.sens] == gate else gate
         v = OUT / f"{gid}_verdict.json"
         if v.exists() and not a.force:
             print(f"{gid}: {json.loads(v.read_text())['verdict']} already in {v.name}, "
