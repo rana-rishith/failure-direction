@@ -37,18 +37,49 @@ import soundfile as sf
 import torch
 
 from src import data as D
+from src.analysis import load_gate_config
 from src.diverse import G_MAX, G_MIN, K0, _ratios
 from src.lowcut import lowcut_sisdr
 from src.models import magnitude
+from src.r3 import _after      # the only _after in src/, rather than a third copy
 
 SPLIT_DIR = Path(C.REPO) / "configs" / "splits"
 K100 = int(np.ceil(100.0 * C.N_FFT / C.SR))      # first bin of the 100 Hz band
 BANDS = (("", K0), ("_hp100", K100))
 
-# Gate thresholds, configs/gate_universal.yaml U1_failure_class. Do not edit
-# here: edit the gate, and only in a new yaml committed before the run.
-NR_INERT = 0.30
-RADD_HALLUCINATE = 0.05
+# Gate thresholds, read out of configs/gate_universal.yaml U1_failure_class at import
+# so this file cannot hold a second copy of a registered number. scripts/run_universal.py
+# parses the same two lines the same way.
+_U1 = load_gate_config(Path(C.REPO) / "configs" / "gate_universal.yaml")["U1_failure_class"]
+NR_INERT = _after(_U1["classes"]["inert"], "<")
+RADD_HALLUCINATE = _after(_U1["classes"]["hallucinate"], ">=")
+
+HEARD = {"weather": C.WEATHER, "anthro": C.ANTHRO}
+
+
+def heard_types(tag: str):
+    """MarVEN types this tag was trained on, which fixes its R1 reference. One
+    implementation for every caller: a tag classed from the CLI and the same tag
+    classed by the rescore must not get different rungs."""
+    for fam, types in HEARD.items():
+        if f"_{fam}" in tag:
+            return types
+    if "_loto_" in tag:                      # leave-one-type-out: heard the rest of weather
+        held = tag.split("_loto_")[1].split("_s")[0]
+        return tuple(t for t in C.WEATHER if t != held)
+    return ()                                # demand / fsd / dns: no MarVEN type heard
+
+
+def model_fn(tag: str, dev: str):
+    from src import models as M
+    model = M.load_model(tag.split("_")[0], tag, kind="best", device=dev)
+    model.eval()
+
+    @torch.no_grad()
+    def fn(x: np.ndarray) -> np.ndarray:
+        xt = torch.from_numpy(np.ascontiguousarray(x, np.float32))[None].to(dev)
+        return model(xt)[0][0].float().cpu().numpy()
+    return fn
 
 ORACLE_ROWS = C.METRICS / "review_oracle_masks_rows.csv"
 
@@ -292,17 +323,30 @@ def snr_band(snr: int) -> str:
     return "other"
 
 
-def bootstrap_ci(v, n: int = 2000, alpha: float = 0.05, seed: int = C.SEED):
-    """Percentile CI of the median. Resamples base utterances, not rows: the
-    same clean utterance appears under two noise types, so resampling rows
-    treats one utterance as two independent draws and shrinks the interval."""
+def bootstrap_ci(v, by=None, n: int = 2000, alpha: float = 0.05, seed: int = C.SEED):
+    """Percentile CI of the median, resampling the clusters named in `by` (base
+    utterances) and not rows: the same clean utterance appears under several noise
+    types and SNRs, so resampling rows treats one utterance as several independent
+    draws and shrinks the interval. by=None is one row per cluster, i.e. the plain
+    row bootstrap, and is only right when the rows really are independent."""
     v = np.asarray(v, dtype=np.float64)
-    v = v[np.isfinite(v)]
+    by = np.arange(len(v)) if by is None else np.asarray(by)
+    ok = np.isfinite(v)
+    v, by = v[ok], by[ok]
     if len(v) < 2:
         return (np.nan, np.nan)
+    order = np.argsort(by, kind="stable")
+    sizes = np.unique(by, return_counts=True)[1]        # same order as `order` groups them
+    pad = np.full((len(sizes), int(sizes.max())), np.nan)
+    for j, (s, k) in enumerate(zip(np.r_[0, np.cumsum(sizes)[:-1]], sizes)):
+        pad[j, :k] = v[order[s:s + k]]
     rng = np.random.default_rng(seed)
-    idx = rng.integers(0, len(v), size=(n, len(v)))
-    meds = np.median(v[idx], axis=1)
+    meds = []
+    for lo in range(0, n, 250):                         # chunked: pad[pick] is the memory peak
+        m = min(250, n - lo)
+        pick = rng.integers(0, len(sizes), size=(m, len(sizes)))
+        meds.append(np.nanmedian(pad[pick].reshape(m, -1), axis=1))
+    meds = np.concatenate(meds)
     return (float(np.quantile(meds, alpha / 2)), float(np.quantile(meds, 1 - alpha / 2)))
 
 
@@ -345,11 +389,11 @@ def summarise(rows: pd.DataFrame, heard_types=None, n_boot: int = 2000) -> pd.Da
                "rung": "/".join(sorted(g.rung.unique()))}
         for band, _ in BANDS:
             for c in SUMMARY_COLS:
-                col = f"{c}{band}" if f"{c}{band}" in g else c
-                if col not in g:
+                col = f"{c}{band}"       # no fallback to the full band: a column with no
+                if col not in g:         # _hp100 twin must not be reported under that name
                     continue
                 v = g[col]
-                lo, hi = bootstrap_ci(v.values, n=n_boot)
+                lo, hi = bootstrap_ci(v.values, g.base.values, n=n_boot)
                 rec[f"{c}{band}"] = float(v.median())
                 rec[f"{c}{band}_lo"] = lo
                 rec[f"{c}{band}_hi"] = hi
