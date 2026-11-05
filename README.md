@@ -333,6 +333,119 @@ and STOI measure what came out. It skips bins below 60 Hz (bins 0 and 1 at
 `N_FFT=512`). The older all-bin values sit in `e_over_full`, `e_under_full`,
 `e_clean_full` and `e_noisy_full`.
 
+## The probe tool
+
+`src/probe/` packages the failure-direction metric as one function so that an
+enhancer trained anywhere can be scored on the same frozen split. It is a
+wrapper, not a reimplementation: `_ratios`, the level-aligned gain clamp and the
+bin floor are imported from `src/diverse.py`, which produced the numbers in
+`results/`. There is one definition of the energy split in this repo.
+
+Nothing extra to install — it needs the same `faildir` environment as the rest
+of the repo, and `FAILDIR_ROOT` and `FAILDIR_CKPT` must both be set before the
+first import. Leaving `FAILDIR_CKPT` unset silently picks up whatever is already
+in the environment, which is the easiest way to score the wrong weights.
+
+```python
+from src.probe import probe
+
+# enhance_fn: np.ndarray (T,) float32 noisy -> np.ndarray (T,) enhanced
+rep = probe(enhance_fn, split="marven_test_v1", heard_types=("rainfall", "lightning", "hurricane"))
+rep["rows"]      # per-utterance DataFrame
+rep["summary"]   # medians with 95% bootstrap CIs per noise type x SNR band
+```
+
+For an enhancer that cannot run in this process — SGMSE+ has its own conda env —
+score a directory of enhanced wavs named by `uid` instead:
+
+```python
+rep = probe(wav_dir="out/sgmse", tag="sgmse")
+```
+
+From the command line:
+
+```
+python -m src.probe --freeze-split
+python -m src.probe --model b1_weather --out results/probe/b1_weather/
+python -m src.probe --wav-dir out/sgmse --tag sgmse --out results/probe/sgmse/
+python -m src.probe.rescore                    # every tag in the reference CSV
+```
+
+### The frozen split
+
+`marven_test_v1` is the 2,280 manifest rows with `split == "test"`, pinned in
+`configs/splits/marven_test_v1.json` with a SHA256 over the sorted uid list.
+MarVEN ships pre-mixed, so there are no noise offsets, SNRs or gains to record:
+the uid list *is* the split, and `load_split()` recomputes the checksum on every
+call and refuses to run if the manifest has moved underneath it.
+
+Every tag in `results/xcorpus/eval/marven.csv` reproduces through `probe()` to a
+worst relative difference of 8.2e-13, which is float64 round-off.
+
+### Output columns
+
+Ratios are energy relative to the clean utterance, on the output-STFT basis (the
+gate uses the output STFT for every model, so mask-intent columns are not
+reproduced here).
+
+| column | meaning |
+| --- | --- |
+| `r_over` | clean energy destroyed |
+| `r_under` | noise energy retained |
+| `r_add` | energy added beyond the noisy input; 0 by construction for a bounded mask |
+| `r_over_b4`, `r_under_b4` | the same two for passthrough on that utterance (the floor) |
+| `r_over_x` | `r_over` minus the passthrough floor: speech destroyed in excess of phase cancellation |
+| `d` | `(r_over - r_under) / (r_over + r_under)`; positive is over-suppression |
+| `nr` | `1 - r_under / r_under_b4`: the fraction of the noise excess removed |
+| `g` | level of the clean component in the output |
+| `delta_d` | `d` minus `d` of the oracle Wiener mask on the same utterance |
+| `sisdr_in`, `sisdr_out`, `sisdr_gain` | SI-SDR, and `sisdr_lc_*` / `sisdr_hp100_*` with the sub-62.5 Hz and sub-100 Hz bands removed |
+
+Each `_g` suffix is the level-aligned basis: the output divided by `g` before the
+split, so a model that merely changed level is not charged for over-suppression.
+Each `_hp100` suffix is the same quantity computed from 100 Hz up instead of
+62.5 Hz. The unsuffixed 62.5 Hz columns are the registered basis behind
+`configs/gate_universal.yaml`; `_hp100` is reported **alongside** them and never
+replaces them.
+
+`class` and `class_hp100` apply the `U1_failure_class` thresholds from
+`configs/gate_universal.yaml` (commit `29c1566`) unchanged: `inert` at
+`nr < 0.30` with `r_over_x` below its R1 reference, `over` at `r_over_x` at or
+above it, `hallucinate` at `r_add >= 0.05`. A cell can carry more than one, and
+no class is a failure. `active_balanced` marks a cell matching none of the three;
+that label is the tool's own and has no gate behind it. The classes are
+R4-versus-R1 contrasts, so they need `heard_types`; without it the class columns
+read `unknown`.
+
+Confidence intervals are 95% percentile bootstrap of the median, 2,000
+resamples, resampling **base utterances** rather than rows: each clean utterance
+appears under two noise types, so resampling rows would treat one utterance as
+two independent draws and report intervals that are too narrow.
+
+### Two limits of the reported columns
+
+**`nr_hp100` has a degenerate denominator.** `nr` is `1 - r_under / r_under_b4`,
+and for a noise type whose energy is almost entirely below 100 Hz there is
+nearly no noise left above 100 Hz to remove. Measured on SGMSE+, hurricane at
+SNR > 0: `r_under_b4` is 1.7e-3 full-band but 1.4e-5 in the 100 Hz band, and
+single-utterance `nr_g_hp100` reaches -295. Read `nr_hp100` only together with
+`r_under_b4_hp100`, which is in the per-utterance CSV for exactly this reason.
+`d_hp100` is unaffected: it is a normalised difference and stays in [-1, 1].
+This is the concrete reason the 62.5 Hz columns remain primary and hp100 is
+reported beside them.
+
+**The gate classes are undefined for a zero-shot model.** `inert` and `over`
+compare `r_over_x` at R4 against its R1 reference, so they need rows from the
+same model on noise it was trained on. A model that never saw MarVEN -- SGMSE+,
+DFN3, and every candidate in a zero-shot sweep -- has no R1 rows on this split,
+and `probe()` reports `class = unknown` rather than guessing a substitute
+reference. Classing such a model needs a registered decision about what plays
+the part of R1; `hallucinate`, which is an absolute `r_add` threshold, still
+applies.
+
+Each MarVEN noise type is a single looped recording. Results on this split
+describe those five recordings, not the noise types in general.
+
 ## Expected outputs
 
 ```
