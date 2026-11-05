@@ -418,9 +418,14 @@ R4-versus-R1 contrasts, so they need `heard_types`; without it the class columns
 read `unknown`.
 
 Confidence intervals are 95% percentile bootstrap of the median, 2,000
-resamples, resampling **base utterances** rather than rows: each clean utterance
-appears under two noise types, so resampling rows would treat one utterance as
-two independent draws and report intervals that are too narrow.
+resamples, resampling **base utterances** rather than rows: a clean utterance can
+appear under more than one noise type, so resampling rows would treat one
+utterance as several independent draws and report intervals that are too narrow.
+
+Measured, the clustering is weak: 1.03 rows per base utterance in a
+`noise_type` x `snr_band` cell and 1.29 in the pooled rows, so on this split the
+two bootstraps agree to within about 5%, scattered both ways. The clustered one
+is used because it is the correct one, not because it changes a reading.
 
 ### Two limits of the reported columns
 
