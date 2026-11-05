@@ -1,0 +1,12 @@
+corpus,heldout_class,heldout_by,n_snr_cells,n_test_rows,n_train_rows,mean_rho_feats_only_lgbm,mean_rho_ridge_33,mean_rho_baseline_snr_logE,mean_rho_wada_snr,beats_ridge_33,beats_baseline_snr_logE,type_pass
+marven,bubble_curtain,noise_type,8,476,1804,0.2582,0.1121,0.2523,-0.0531,True,True,True
+marven,hurricane,noise_type,8,446,1834,-0.1045,-0.0483,-0.4007,0.088,False,True,False
+marven,large_commercial_ship,noise_type,8,441,1839,0.0744,-0.0124,0.0901,-0.0586,True,False,False
+marven,lightning,noise_type,8,459,1821,-0.0361,0.2405,0.2588,-0.0184,False,False,False
+marven,rainfall,noise_type,8,458,1822,0.1111,0.0421,0.0398,-0.165,True,True,True
+demand,dem_A,cond,8,400,800,0.7078,0.4916,0.2718,0.0594,True,True,True
+demand,dem_B,cond,8,400,800,0.733,0.5136,0.1784,-0.0246,True,True,True
+demand,dem_H,cond,8,400,800,0.5523,0.1679,0.4261,0.0826,True,True,True
+fsd50k,fsd_boat,cond,8,400,800,0.5358,0.3886,-0.0024,0.0892,True,True,True
+fsd50k,fsd_eval,cond,8,400,800,0.5209,0.3332,0.0399,0.3194,True,True,True
+fsd50k,fsd_weather,cond,8,400,800,0.5184,0.418,-0.0227,0.2816,True,True,True
