@@ -107,9 +107,10 @@ Two consequences for how the work is finished:
 
 ## Paper state
 
-`paper/` holds `main.tex` (102 lines) and 13 section files, 464 lines total. Almost
-every section is a `\plan{}` skeleton naming its outline and source files, with no prose.
-Drafting is the bottleneck, not the experiments.
+`paper/` holds `paper.tex` (1,490 lines) and `references.tex` (238 lines), drafted prose
+rather than skeletons. The earlier layout this file first described, `main.tex` plus 13
+section files of `\plan{}` stubs, moved to `paper/_old/` on 2026-10-28; do not go looking
+for it under `paper/`.
 
 **Never commit or push `paper/*.tex`.** They stay untracked and local.
 
