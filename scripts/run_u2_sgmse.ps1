@@ -23,7 +23,7 @@ param(
     [string]$Base = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\u2",
     [string]$Sgmse = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\sgmse",
     [int]$Steps = 20000,
-    [switch]$SkipGate
+    [switch]$Gate          # opt in: --force rewrites the committed u2_verdict.json
 )
 
 $Repo = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\repo-failure-direction"
@@ -92,11 +92,16 @@ foreach ($fold in $Folds) {
     Write-Host "finished ${fold}: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 }
 
-if (-not $SkipGate) {
+if ($Gate) {
     Write-Host ""
     Write-Host "######## u2 verdict ########"
     Use-Env faildir
     python scripts\run_universal.py --gate u2 --force
     Check "u2 verdict"
+} else {
+    Write-Host ""
+    Write-Host "scored. u2_verdict.json NOT rewritten: U2 already carries a committed"
+    Write-Host "registered verdict, and Gate 4 reports before it is rescored. To rescore:"
+    Write-Host "    python scripts\run_universal.py --gate u2 --force"
 }
 $env:PATH = $Orig
