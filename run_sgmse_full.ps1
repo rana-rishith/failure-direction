@@ -5,7 +5,9 @@
 # and sharing the 4060 with the probe rescore or an sgmse_seg fine-tune drags
 # enhancement from 33 s/file to 330-440 s/file, i.e. 170 h rather than 17.
 # Budget ~17 h at the pilot's median of 32.7 s per file (~37 h at its mean).
-param([switch]$Now)   # -Now: start even while another GPU job holds the card
+# No override flag. Sharing the card is never faster: on 2026-11-05 this script was
+# started with one against a running fine-tune and did 17 files in 58 min (180 s each,
+# against 32.7 s alone) while halving the trainer's rate. Serial finishes both sooner.
 $ErrorActionPreference = "Stop"
 $SG   = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\sgmse"
 $REPO = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\repo-failure-direction"
@@ -23,11 +25,11 @@ function GpuBusy {
 }
 
 $waited = 0
-while ((GpuBusy) -and -not $Now -and $waited -lt 172800) {   # give up waiting after 48 h
+while ((GpuBusy) -and $waited -lt 172800) {   # give up waiting after 48 h
     if ($waited % 600 -eq 0) { Write-Output ("waiting for the GPU to free up... " + [int]($waited/60) + " min") }
     Start-Sleep -Seconds 60; $waited += 60
 }
-if ((GpuBusy) -and -not $Now) { Write-Output "GPU still busy after 48 h; not starting SGMSE+"; exit 1 }
+if (GpuBusy) { Write-Output "GPU still busy after 48 h; not starting SGMSE+"; exit 1 }
 Write-Output ("GPU clear after " + [int]($waited/60) + " min; starting SGMSE+ " + (Get-Date -Format "HH:mm:ss"))
 
 $todo = (Get-ChildItem "$SG\full_in" -Filter *.wav).Count
