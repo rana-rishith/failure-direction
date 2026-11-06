@@ -111,3 +111,25 @@ summary at all. **Neither the 0.19 nor the 0.91 to 0.96 range can be confirmed
 from the committed diverse summary.** The per-seed source has to be located
 before D8 copies those two ranges forward. This is outside C5's three numbers
 and is not a finding against the paper, only an unverified claim.
+
+### Resolved 2026-11-06: the paper is correct
+
+The per-seed source is `results/xcorpus/report2/D_per_seed.csv`, not
+`results/diverse/`. It carries one row per tag with `family` (demand or fsd),
+`arch`, `nr_g` and `nr_plain`, 18 rows, 9 seeds for each family.
+
+Level-aligned `nr_g` by family, over the 9 seeds:
+
+| family | min | max | paper |
+|---|---|---|---|
+| demand | 0.040 | 0.186 | 0.04 to 0.19 |
+| fsd | 0.912 | 0.962 | 0.91 to 0.96 |
+
+Both ranges reproduce. The 0.19 upper bound is 0.186 rounded, and it does come
+from a seed other than seed 1, which is why the seed-1 figures alone stopped at
+0.154.
+
+The trap worth recording: `nr_plain` over the same rows gives -2.940 to 0.628
+for demand and 0.450 to 0.996 for fsd. Reading the plain column instead of the
+level-aligned one would make the paper's claim look wrong by a wide margin in
+both directions. The quantity in the paper is the level-aligned `nr_g`.
