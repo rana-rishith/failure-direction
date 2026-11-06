@@ -108,3 +108,7 @@ results/probe/*/rows.csv
 paper/*.tex
 paper/*.pdf
 paper/_old/
+
+# generated gate tables. Rebuild with scripts/make_gate_tables.py; the script and
+# its test are committed, the .tex output is not.
+paper/tables/
