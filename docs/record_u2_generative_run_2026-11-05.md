@@ -73,7 +73,10 @@ arms that already passed.
 ## Cost, measured
 
 0.820 h per 1,000 steps on the 8 GB RTX 4060 Laptop, from the step count and
-mtime of `ckpt/sgmse_seg_weather/last.ckpt`. 16.4 h a fold, 32.8 h for both.
+mtime of `ckpt/sgmse_seg_weather/last.ckpt`. That fold carried the contention
+hour. The anthro fold, on a card with nothing else on it, ran **0.647 h per
+1,000 steps**, 13.0 h a fold, so the pair costs about 29 h rather than the
+header's 17 h each.
 
 Then 6,055 windows of 3.00 s to enhance across the two folds. The only measured
 enhancement rate is 32.7 s per file on 13.49 s of audio, so 2.4 s of compute per
@@ -106,10 +109,12 @@ override served no case.
 
 ## Remaining, in order
 
-1. weather fine-tune to 20,000 steps; global_step 12,000 at 20:50 on 5 Nov,
-   so about 6.6 h left
-2. anthro fine-tune, 16.4 h
-3. enhance 6,055 windows, about 12.5 h, **required for the verdict**
+1. ~~weather fine-tune~~ done: global_step 20,000, epoch 17, 02:08 on 6 Nov
+2. anthro fine-tune: global_step 13,500 at 10:52 on 6 Nov, about 4.2 h left
+3. enhance 6,055 windows into `u2\<fold>_out_sgmse`, none done yet, about 12 h,
+   **required for the verdict**. The background job runs `sgmse_seg.py train`
+   only, so nothing starts this on its own: rerun `scripts/run_u2_sgmse.ps1`,
+   which skips the staging and the training it finds already done.
 4. score both folds and run `--gate u2 --force`
 5. `run_sgmse_full.ps1`, last: 17 h, a leaderboard row and no verdict
 
