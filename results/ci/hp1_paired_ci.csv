@@ -1,0 +1,2 @@
+quantity,unit,n_base,n_rows,point,ci_lo,ci_hi,cutoff,ci_fully_past_cutoff,frac_draws_past_cutoff,frac_draws_model_trait,n_boot,seed,post_hoc
+H_P1_delta_sgmse,paired base utterance,40,240,-0.23264907954609557,-0.3617085282369439,-0.06891390864703799,0.2,False,0.5691,0.0675,10000,1234,True
