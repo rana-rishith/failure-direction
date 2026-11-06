@@ -20,6 +20,10 @@ from __future__ import annotations
 import os
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")  # MUST precede torch/scipy/pystoi
+os.environ.setdefault("MKL_THREADING_LAYER", "SEQUENTIAL")  # MUST precede numpy: some
+# Windows conda installs die with 0xc06d007f on the first BLAS call otherwise. setdefault,
+# so an explicit env var still wins. It fixes the accumulation order, which the results
+# committed before 6 Nov 2026 did not.
 
 import random
 from pathlib import Path

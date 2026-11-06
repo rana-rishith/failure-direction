@@ -150,10 +150,19 @@ $env:MKL_THREADING_LAYER="SEQUENTIAL"
 export MKL_THREADING_LAYER=SEQUENTIAL
 ```
 
-`config.py` already sets `KMP_DUPLICATE_LIB_OK` for the related duplicate-OpenMP
-problem, but this one is deliberately left to the environment: the threading
-layer changes the order BLAS accumulates in, and pinning it repo-wide would
-alter numbers in a way that belongs to a decision, not a default.
+Since 6 Nov 2026 the repository sets this for you, in two places. `config.py`
+sets it beside the `KMP_DUPLICATE_LIB_OK` it already set for the related
+duplicate-OpenMP problem, which covers the scripts. The root `conftest.py` sets
+it for `python -m pytest`, and that file is necessary: MKL reads the variable
+when its DLL loads, and a test module can import numpy or torch before it
+imports `config`, which is too late. Both use `setdefault`, so an explicit
+environment variable still wins.
+
+The threading layer fixes the order BLAS accumulates in, so in principle a
+result produced with the pin can differ in the last digits from one produced
+without it. This was checked on 6 Nov 2026: the suite gives 78 passed, and
+`scripts/make_gate_tables.py` regenerates `paper/tables/` byte-identical to the
+pre-pin output, so no verdict and no printed number moved.
 
 ## How to run
 
