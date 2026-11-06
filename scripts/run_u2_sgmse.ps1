@@ -3,7 +3,7 @@
 #
 #   .\scripts\run_u2_sgmse.ps1
 #   .\scripts\run_u2_sgmse.ps1 -Folds weather -Steps 2000     # one fold, short
-#   .\scripts\run_u2_sgmse.ps1 -SkipGate                      # leave the verdict alone
+#   .\scripts\run_u2_sgmse.ps1 -Gate                          # also rewrite the verdict
 #
 # Switches env per step: faildir for the repo code, sgmse for SGMSE+. Every step is
 # resumable, so rerunning after a crash or a GPU drop picks up where it stopped:
