@@ -260,7 +260,7 @@ def u3_features(conds, fresh: bool = False) -> pd.DataFrame:
     import soundfile as sf
 
     from src import features as FT
-    from wada_snr import wada
+    from src.wada_snr import wada
     man = pd.read_csv(XC / "manifest.csv")
     man = man[man.cond.isin(conds)].reset_index(drop=True)
     cache = OUT / "u3_features.csv"

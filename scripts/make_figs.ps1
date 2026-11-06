@@ -7,7 +7,8 @@
 # fig_spectrograms needs the GPU, the b1 checkpoints and MarVEN audio.
 # The retired figs\claim3_drho is not rebuilt.
 $ErrorActionPreference = "Continue"
-$repo = Split-Path -Parent $MyInvocation.MyCommand.Path
+# the script now lives in scripts/, so the repo root is two levels up
+$repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $repo
 $R = Split-Path -Parent $repo
 $E = "C:\Users\ranar\anaconda3\envs\faildir"

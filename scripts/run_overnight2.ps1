@@ -12,7 +12,8 @@
 param([double]$Hours = 20)
 
 $ErrorActionPreference = "Continue"
-$repo = Split-Path -Parent $MyInvocation.MyCommand.Path
+# the script now lives in scripts/, so the repo root is two levels up
+$repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $repo
 $R  = Split-Path -Parent $repo
 $DS = Join-Path $R "Failure-Direction-Datasets"

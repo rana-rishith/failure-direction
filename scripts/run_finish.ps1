@@ -7,7 +7,8 @@
 # 3. scores SGMSE+ only, regenerates report2 (src.xn2 + src.xn2_extra), commits, pushes
 # Safe to rerun: commits are skipped when nothing changed, SGMSE+ resumes.
 $ErrorActionPreference = "Continue"
-$repo = Split-Path -Parent $MyInvocation.MyCommand.Path
+# the script now lives in scripts/, so the repo root is two levels up
+$repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $repo
 $R  = Split-Path -Parent $repo
 $SG = Join-Path $R "sgmse"

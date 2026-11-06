@@ -94,7 +94,7 @@ result, and the mechanism built on it, are withdrawn.
 ## Figures
 
 All 13 figures live in [`paper/figs/`](paper/figs) as PDF and PNG, and are
-rebuilt from committed result tables by `make_figs.ps1`.
+rebuilt from committed result tables by `scripts/make_figs.ps1`.
 
 | Figure | Shows |
 |---|---|
@@ -117,14 +117,15 @@ file, so the table cannot drift from the ledger.
 
 | Path | What is in it |
 |---|---|
-| `src/` | the library: energy split, metrics, models, gates, `src/probe/` |
-| `scripts/` | runnable entry points, including `run_universal.py` and `make_gate_tables.py` |
+| `src/` | the library. Imported, never run directly: energy split, metrics, models, gates, `src/probe/` |
+| `scripts/` | every runnable entry point, Python and PowerShell. `run_universal.py` scores the gates, `make_gate_tables.py` builds the ledger tables, `make_figs.ps1` rebuilds the figures, `run_*.ps1` drive the long jobs |
 | `configs/` | gate files. Thresholds are read from these at run time |
 | `results/` | every measured result. Index below |
 | `docs/` | usage, detailed results, and one record per analysis |
 | `tests/` | the test suite, `python -m pytest` |
 | `paper/figs/` | the 13 figures |
 | `notebooks/` | exploratory notebook |
+| `config.py` | paths and constants, imported as `import config as C`. It stays at the root because every module reaches it from there |
 
 ### Results index
 
@@ -163,6 +164,7 @@ command, what was found, and what was decided.
 | [WER source](docs/record_c4_wer_source_2026-11-06.md) | which run produced the reported word error rates |
 | [three numbers](docs/record_c5_three_numbers_2026-11-06.md) | three paper numbers traced to their source |
 | [G1 G2 G3](docs/record_g1g2g3_persisted_2026-11-06.md) | persisting the three original gates to a file |
+| [repository layout](docs/record_repo_layout_2026-11-06.md) | the src/scripts split, and the stale paths it leaves in six pre-registered yamls |
 
 ## Citation
 

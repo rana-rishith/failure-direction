@@ -7,7 +7,8 @@
 # Everything is logged to logs\batch_<date>_<time>.log.
 
 $ErrorActionPreference = "Continue"     # python writes progress to stderr; do not abort on it
-$repo = Split-Path -Parent $MyInvocation.MyCommand.Path
+# the script now lives in scripts/, so the repo root is two levels up
+$repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $repo
 $env:FAILDIR_ROOT = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\MarVEN"
 $env:FAILDIR_CKPT = Join-Path $repo "ckpt"
