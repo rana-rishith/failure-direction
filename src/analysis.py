@@ -75,12 +75,14 @@ def claim1(res: pd.DataFrame) -> dict[str, pd.DataFrame]:
 def claim2(res: pd.DataFrame) -> dict[str, pd.DataFrame]:
     t = res[res.tag.isin(TRAINED)]
 
-    med = t.groupby(["tag", "split"])[["r_over", "r_under"]].median().round(4)
-    med["ratio"] = np.where(
-        med.r_over > med.r_under,
-        (med.r_over / med.r_under).round(1),
-        (med.r_under / med.r_over).round(1),
-    )
+    med = t.groupby(["tag", "split"])[["r_over", "r_under"]].median()
+    # Divide BEFORE rounding. Dividing the 4-dp values gave 5.8 and 28.6 where the
+    # medians themselves give 5.9 and 28.4, and both wrong figures reached the paper.
+    ratio = np.where(med.r_over > med.r_under,
+                     med.r_over / med.r_under,
+                     med.r_under / med.r_over).round(1)
+    med = med.round(4)
+    med["ratio"] = ratio
     med["dominant"] = np.where(med.r_over > med.r_under, "over", "under")
 
     per_snr = t.pivot_table(index="snr", columns="split",
