@@ -611,15 +611,23 @@ a 4.5 point gap) that was measured with the B1 checkpoints preceding the 13 Sep
 words of 29,643 between the two runs, which is what rules the text normaliser
 out as the cause. See `docs/record_c4_wer_source_2026-11-06.md`.
 
-### Gates (pre-DC, not yet recomputed)
+### Gates
 
-G1 fails as written. It asks whether direction varies across the five noise
-types, but the hypothesis was about seen vs unseen, so the gate tests the wrong
-axis. G2 passed on the pre-fix energies (median gap 0.288, threshold 0.10). G3
-can't be tested: direction and condition overlap in ~99.4% of utterances, and
-the one SNR level with enough overlap (+20 dB) has failures too small for the
-threshold to mean anything. G1 and G2 both read the energy decomposition, so
-both need a rerun on the corrected energies.
+Recomputed on the corrected energies and persisted to
+`results/metrics/gate_results.yaml` on 6 Nov 2026. No verdict changed.
+
+G1 fails as written (pooled spread 0.161, threshold 0.30). It asks whether
+direction varies across the five noise types, but the hypothesis was about seen
+vs unseen, so the gate tests the wrong axis. Split-conditioned, matched runs
+0.618 to 0.737 and unseen -0.925 to -0.666, a separation of 1.284, which is
+post-hoc and must be flagged as such. G2 passes (median gap 0.206, threshold
+0.10); the pre-fix energies gave 0.288, so the paper's printed 0.0347 / 0.3223 /
+0.288 are superseded by 0.0240 / 0.2304 / 0.206. G3 can't be tested: direction
+and condition overlap in 99.5% of utterances (11 of 2,280 matched rows have a
+negative direction index), and the one SNR level with enough overlap (+20 dB)
+has failures too small for the threshold to mean anything.
+
+See `docs/record_g1g2g3_persisted_2026-11-06.md`.
 
 ### Withdrawn
 
