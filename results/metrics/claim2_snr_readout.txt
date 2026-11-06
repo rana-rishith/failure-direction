@@ -1,0 +1,1 @@
+corr(log10 e_under, -snr) = 0.899259
