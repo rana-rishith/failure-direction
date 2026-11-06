@@ -116,5 +116,6 @@ paper/tables/
 # build intermediate: fig_spectrograms.py writes here, make_figs.ps1 copies into paper/figs
 figures/
 
-# session handoff briefs: process scaffolding, not repository content
-handofftool.md
+# session handoff briefs: process scaffolding, not repository content.
+# A pattern, not one filename, so no handoff file can reappear here.
+*handoff*.md
