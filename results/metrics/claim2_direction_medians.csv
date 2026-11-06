@@ -1,0 +1,5 @@
+tag,split,r_over,r_under,ratio,dominant
+b1,test_matched,0.0187,0.0032,5.9,over
+b1,test_unseen,0.0059,0.2242,37.7,under
+b3,test_matched,0.0209,0.0042,5.0,over
+b3,test_unseen,0.0076,0.2172,28.4,under
