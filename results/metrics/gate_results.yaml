@@ -1,0 +1,34 @@
+G1:
+  threshold: 0.3
+  pooled_spread: 0.1608
+  within_split_spread:
+    test_matched: 0.119
+    test_unseen: 0.259
+  matched_to_unseen_separation_POSTHOC: 1.284
+  verdict: FAIL
+  note: 'The gate points at the wrong axis: it tests whether direction varies across
+    NOISE TYPES, while the hypothesis was that SEEN conditions fail differently from
+    UNSEEN ones. Report it as specified, report the split-conditioned version, and
+    flag the matched-to-unseen separation as post-hoc.'
+G2:
+  threshold: 0.1
+  gap_mean: 3.442
+  gap_median: 0.206
+  verdict: PASS
+  note: report the median as primary; the mean is inflated by r_under's tail at negative
+    SNR
+G3:
+  threshold: 0.05
+  under_dominant_split_mix:
+    test_unseen: 200
+  over_dominant_split_mix:
+    test_matched: 200
+  matched_rows_with_negative_dir_idx: 11
+  matched_rows: 2280
+  collinearity: 0.9952
+  verdict: UNTESTABLE
+  note: A WER contrast between direction extremes measures matched against unseen
+    and restates Claim 1 in WER units. Usable overlap exists only at the highest SNR,
+    where the absolute failures are too small for the 0.05 threshold to be plausible.
+    The direction extremes also saturate at +/-1, so they are degenerate rather than
+    graded failures.
