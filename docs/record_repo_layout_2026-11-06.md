@@ -19,9 +19,13 @@ lives in `src/`. The repository root holds only project metadata and
 | `docs/` | usage, detailed results, and one record per analysis |
 | `tests/` | `python -m pytest` |
 | `paper/figs/` | the 13 figures |
-| root | `README.md`, `LICENSE`, `CITATION.cff`, `environment.yml`, `requirements.txt`, `config.py` |
+| root | `README.md`, `LICENSE`, `CITATION.cff`, `environment.yml`, `requirements.txt`, `config.py`, `conftest.py` |
 
-`config.py` is the one exception to the rule. Roughly forty modules reach it as
+`config.py` and `conftest.py` are the two exceptions to the rule. `conftest.py`
+was added later the same day: pytest only reads the rootdir copy, and it must set
+`MKL_THREADING_LAYER` before any test module imports numpy. It holds no test code.
+
+`config.py` is the other exception. Roughly forty modules reach it as
 `import config as C`, which resolves against the repository root. Moving it
 would mean editing every one of those imports for no gain, so it stays.
 

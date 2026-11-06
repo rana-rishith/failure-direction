@@ -126,6 +126,7 @@ file, so the table cannot drift from the ledger.
 | `paper/figs/` | the 13 figures |
 | `notebooks/` | exploratory notebook |
 | `config.py` | paths and constants, imported as `import config as C`. It stays at the root because every module reaches it from there |
+| `conftest.py` | sets `MKL_THREADING_LAYER` before pytest imports numpy. No test code. At the root because pytest reads only the rootdir copy |
 
 ### Results index
 
