@@ -202,6 +202,27 @@ in your Windows system variables, it beats the default; override it per session
 with `$env:` or `os.environ[...] = ...`. `setdefault` won't work, because the
 variable already exists.
 
+### If the test suite dies with a Windows fatal exception
+
+On some Windows conda installs MKL's threaded layer cannot delay-load its
+OpenMP DLL, and the process dies with `Windows fatal exception: code
+0xc06d007f` on the first BLAS call. It looks like a crash in whatever code
+happens to reach `numpy.dot` first, so it reads as a bug in this repo and is
+not one: a bare `python -c "import numpy as np; a=np.random.rand(10); a@a"`
+dies the same way. Force the sequential layer:
+
+```bash
+# Windows PowerShell
+$env:MKL_THREADING_LAYER="SEQUENTIAL"
+# bash
+export MKL_THREADING_LAYER=SEQUENTIAL
+```
+
+`config.py` already sets `KMP_DUPLICATE_LIB_OK` for the related duplicate-OpenMP
+problem, but this one is deliberately left to the environment: the threading
+layer changes the order BLAS accumulates in, and pinning it repo-wide would
+alter numbers in a way that belongs to a decision, not a default.
+
 ## How to run
 
 ```
@@ -762,6 +783,26 @@ metrics stay as they were.
     Every energy-based number changed, and one finding was withdrawn.
 17. **`src/confound.py` is new**, with a `--model` flag so the LOTO test runs on
     both B1 and B3.
+
+## Records
+
+Every audit and check is written up in `docs/`, with its numbers, the files it
+read and the hashes. These are the evidence trail behind the gate ledger; read
+the relevant one before trusting a number quoted anywhere else.
+
+| record | what it settles |
+|---|---|
+| `record_gate_inventory_2026-11-05.md` | every declared gate and where its verdict lives (26 gates, 16 yamls) |
+| `record_audit_D_basis_2026-11-05.md` | the registered basis and verdict of `D_diversity_control` |
+| `record_audit_U2_arms_2026-11-05.md` | that both passing U2 arms are fine-tuned, not zero-shot, and when the inert rule was fixed |
+| `record_probe_tool_2026-11-05.md` | the probe tool and what it reproduces |
+| `record_u2_generative_run_2026-11-05.md` | the SGMSE+ per-fold fine-tune and its two protocol deviations |
+| `record_bootstrap_ci_2026-11-06.md` | 122 descriptive CIs for the headline numbers; U1's ordering separates in 36 of 36 cells |
+| `record_c2_hp1_paired_ci_2026-11-06.md` | the paired CI for H_P1, and how firmly its class holds |
+| `record_c3_oracle_delta_d_2026-11-06.md` | distance from an oracle Wiener mask, and why `d = 0` is not a neutral reference |
+| `record_c4_wer_source_2026-11-06.md` | which WER numbers are correct, and why two sets exist |
+| `record_c5_three_numbers_2026-11-06.md` | three carried-forward numbers, and one unit mismatch that looks like an error |
+| `record_g1g2g3_persisted_2026-11-06.md` | G1, G2 and G3 persisted, and the G2 figures the paper prints |
 
 ## Limitations
 
