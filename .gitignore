@@ -112,3 +112,6 @@ paper/_old/
 # generated gate tables. Rebuild with scripts/make_gate_tables.py; the script and
 # its test are committed, the .tex output is not.
 paper/tables/
+
+# build intermediate: fig_spectrograms.py writes here, make_figs.ps1 copies into paper/figs
+figures/
