@@ -28,16 +28,16 @@ function Run($name, [string[]]$cmd) {
 }
 
 Run "new figures" @("scripts\paper_figs.py", "--out-dir", $out)
-Run "claim1_snr" @($sv, "plot_claim1_snr.py", "--eval-dir", "results\eval", "--manifest", $man, "--out", "$out\claim1_snr")
-Run "fig_direction" @($sv, "fig_direction.py", "--eval-dir", "results\eval", "--out", "$out\fig_direction")
-Run "appendix a1-a4" @($sv, "fig_appendix.py", "a1", "a2", "a3", "a4",
+Run "claim1_snr" @($sv, "scripts\plot_claim1_snr.py", "--eval-dir", "results\eval", "--manifest", $man, "--out", "$out\claim1_snr")
+Run "fig_direction" @($sv, "scripts\fig_direction.py", "--eval-dir", "results\eval", "--out", "$out\fig_direction")
+Run "appendix a1-a4" @($sv, "scripts\fig_appendix.py", "a1", "a2", "a3", "a4",
     "--eval-dir", "results\eval", "--wer-csv", "results\wer_snrmax-5.csv",
     "--curves-csv", "results\metrics\training_curves.csv", "--out-dir", $out)
 # Not through $sv: this one writes its own .pdf and .png and no .svg, so it will not
 # appear in the listing below. It reads u1_cells.csv and u2_cells.csv, which the U2
 # gate rewrites, so fig_ladder is the figure that goes stale after a U2 rerun.
 Run "fig_ladder + fig_u3_ceiling" @("paper\figs_src\fig_universal.py")
-Run "fig_spectrograms (GPU)" @($sv, "fig_spectrograms.py")
+Run "fig_spectrograms (GPU)" @($sv, "scripts\fig_spectrograms.py")
 if (Test-Path "figures\fig_spectrograms.svg") { Copy-Item "figures\fig_spectrograms.*" $out -Force }
 
 Write-Host "`n=== done ==="

@@ -202,9 +202,9 @@ python -m src.features                  # ~15 min, CPU-bound
 python -m src.claim3 --fold weather
 python -m src.claim3 --fold weather --damaging-only
 
-python claim2_check.py                  # Claim 2 tables on the corrected energies
-python claim2_by_type.py
-python claim2_loto.py
+python scripts/claim2_check.py                  # Claim 2 tables on the corrected energies
+python scripts/claim2_by_type.py
+python scripts/claim2_loto.py
 ```
 
 You can re-run any stage safely. Training picks up from the last atomic
