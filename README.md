@@ -600,10 +600,16 @@ noise recording it hears.
 ### WER
 
 faster-whisper large-v3 on the 818 negative-SNR rows: clean 1.38%, noisy
-17.47%, b1_matched 16.23%, b1_unseen **21.93%**. On unseen noise, enhancement
-makes ASR 4.5 points worse than leaving the audio alone, while SI-SDR and STOI
+17.45%, b1_matched 15.94%, b1_unseen **20.68%**. On unseen noise, enhancement
+makes ASR 3.2 points worse than leaving the audio alone, while SI-SDR and STOI
 call the output roughly as good as passthrough. WER never reads the energy
 decomposition, so the DC fix leaves these numbers as they were.
+
+These replace an earlier set (noisy 17.47, b1_matched 16.23, b1_unseen 21.93,
+a 4.5 point gap) that was measured with the B1 checkpoints preceding the 13 Sep
+2026 retrain. The two arms that never run B1, clean and noisy, moved by 1 and 5
+words of 29,643 between the two runs, which is what rules the text normaliser
+out as the cause. See `docs/record_c4_wer_source_2026-11-06.md`.
 
 ### Gates (pre-DC, not yet recomputed)
 
