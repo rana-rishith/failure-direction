@@ -88,14 +88,17 @@ def untracked_files() -> list[str]:
 def write_verdict(gate_id: str, cfg: dict, sha: str, thresholds: dict,
                   cells: list[dict] | pd.DataFrame, passed: bool, notes: dict) -> dict:
     OUT.mkdir(parents=True, exist_ok=True)
+    # Read the tree state before writing: once a previously committed cells file
+    # has been overwritten, this run's own output makes the tree look dirty.
+    commit, untracked = code_commit(), untracked_files()
     cells = pd.DataFrame(cells)
     cells.to_csv(OUT / f"{gate_id}_cells.csv", index=False)
     v = {"gate": gate_id,
          "config_commit": cfg["provenance"]["commit"],
          "config_committed_at": cfg["provenance"]["committed_at"],
          "config_sha256_12": sha,
-         "code_commit": code_commit(),
-         "untracked_files": untracked_files(),
+         "code_commit": commit,
+         "untracked_files": untracked,
          "run_at": dt.datetime.now().isoformat(timespec="seconds"),
          "thresholds": thresholds,
          "notes": notes,
