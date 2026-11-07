@@ -3,27 +3,9 @@
   "config_commit": "29c1566",
   "config_committed_at": "2026-10-19",
   "config_sha256_12": "a13d0d71f9e6",
-  "code_commit": "cc8aab9b97f885cb2cd53f818ec1db43f7a8e5f4",
-  "untracked_files": [
-    "paper/.gitignore",
-    "paper/main.tex",
-    "paper/refs.bib",
-    "paper/sections/01_intro.tex",
-    "paper/sections/02_related.tex",
-    "paper/sections/03_data.tex",
-    "paper/sections/04_measure.tex",
-    "paper/sections/05_models.tex",
-    "paper/sections/06_protocol.tex",
-    "paper/sections/07_claim1.tex",
-    "paper/sections/08_claim2.tex",
-    "paper/sections/09_claim3.tex",
-    "paper/sections/10_diversity.tex",
-    "paper/sections/11_discussion.tex",
-    "paper/sections/12_conclusion.tex",
-    "paper/sections/A_appendix.tex",
-    "results/universal/u2_cells.csv"
-  ],
-  "run_at": "2026-10-28T12:04:49",
+  "code_commit": "041a3ef0fa5ae544fb5a146c1fafd377c8aac600",
+  "untracked_files": [],
+  "run_at": "2026-11-07T09:34:46",
   "thresholds": {
     "snr_low": [
       -15,
@@ -39,7 +21,8 @@
     "basis": "output STFT, level-aligned (_g)",
     "levels_passed": {
       "cm": 4,
-      "dfn3": 4
+      "dfn3": 4,
+      "sgmse": 4
     },
     "min_classes": 2,
     "on_fail": "headline narrows to 'bounded mask estimators'"
@@ -47,11 +30,13 @@
   "notes": {
     "class_pass": {
       "complex_mask": true,
-      "diverse_pretrained": true
+      "diverse_pretrained": true,
+      "generative": true
     },
     "arch_pass": {
       "cm": true,
-      "dfn3": true
+      "dfn3": true,
+      "sgmse": true
     },
     "classes_measured": {
       "complex_mask": [
@@ -59,13 +44,12 @@
       ],
       "diverse_pretrained": [
         "dfn3"
-      ]
-    },
-    "classes_missing": {
+      ],
       "generative": [
         "sgmse"
       ]
     },
+    "classes_missing": {},
     "complex_mask_amendment_sha256_12": "85f3ef3e8df0",
     "rungs": {
       "R1": "A windows",
@@ -358,6 +342,150 @@
       "median_d_R1": 0.2312,
       "median_d_R2": -0.5395,
       "median_d_R4": -0.9812,
+      "n_R1": 143,
+      "n_R2": 145,
+      "n_R4": 109,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "all",
+      "snr": -15,
+      "median_d_R1": -0.1202,
+      "median_d_R2": -0.9236,
+      "median_d_R4": -0.9982,
+      "n_R1": 202,
+      "n_R2": 207,
+      "n_R4": 238,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "all",
+      "snr": -10,
+      "median_d_R1": -0.0052,
+      "median_d_R2": -0.7834,
+      "median_d_R4": -0.9961,
+      "n_R1": 242,
+      "n_R2": 254,
+      "n_R4": 294,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "all",
+      "snr": -5,
+      "median_d_R1": 0.05,
+      "median_d_R2": -0.7286,
+      "median_d_R4": -0.9879,
+      "n_R1": 232,
+      "n_R2": 225,
+      "n_R4": 270,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "all",
+      "snr": 0,
+      "median_d_R1": 0.1524,
+      "median_d_R2": -0.5544,
+      "median_d_R4": -0.974,
+      "n_R1": 235,
+      "n_R2": 238,
+      "n_R4": 272,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "anthro",
+      "snr": -15,
+      "median_d_R1": 0.0193,
+      "median_d_R2": -0.9618,
+      "median_d_R4": -0.9981,
+      "n_R1": 86,
+      "n_R2": 87,
+      "n_R4": 135,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "anthro",
+      "snr": -10,
+      "median_d_R1": 0.2047,
+      "median_d_R2": -0.862,
+      "median_d_R4": -0.9939,
+      "n_R1": 84,
+      "n_R2": 90,
+      "n_R4": 187,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "anthro",
+      "snr": -5,
+      "median_d_R1": 0.1118,
+      "median_d_R2": -0.7953,
+      "median_d_R4": -0.9863,
+      "n_R1": 87,
+      "n_R2": 86,
+      "n_R4": 163,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "anthro",
+      "snr": 0,
+      "median_d_R1": 0.1597,
+      "median_d_R2": -0.6882,
+      "median_d_R4": -0.9725,
+      "n_R1": 92,
+      "n_R2": 93,
+      "n_R4": 163,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "weather",
+      "snr": -15,
+      "median_d_R1": -0.2918,
+      "median_d_R2": -0.9035,
+      "median_d_R4": -0.9985,
+      "n_R1": 116,
+      "n_R2": 120,
+      "n_R4": 103,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "weather",
+      "snr": -10,
+      "median_d_R1": -0.1003,
+      "median_d_R2": -0.7529,
+      "median_d_R4": -0.9977,
+      "n_R1": 158,
+      "n_R2": 164,
+      "n_R4": 107,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "weather",
+      "snr": -5,
+      "median_d_R1": -0.0109,
+      "median_d_R2": -0.6626,
+      "median_d_R4": -0.99,
+      "n_R1": 145,
+      "n_R2": 139,
+      "n_R4": 107,
+      "unit_pass": true
+    },
+    {
+      "arch": "sgmse",
+      "fold": "weather",
+      "snr": 0,
+      "median_d_R1": 0.1493,
+      "median_d_R2": -0.4297,
+      "median_d_R4": -0.979,
       "n_R1": 143,
       "n_R2": 145,
       "n_R4": 109,
