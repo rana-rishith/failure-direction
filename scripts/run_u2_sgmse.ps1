@@ -86,6 +86,10 @@ foreach ($fold in $Folds) {
     $global:LASTEXITCODE = $rc
     Check "enhance $fold"
 
+    # enhance_resumable.py does not carry index.csv across the way dfn_seg.py does,
+    # and score-windows needs it beside the enhanced wavs.
+    Copy-Item (Join-Path $in "index.csv") (Join-Path $out "index.csv") -Force
+
     Use-Env faildir
     python -m src.segment --fold $fold --score-windows $out --tag sgmse
     Check "score-windows $fold"
