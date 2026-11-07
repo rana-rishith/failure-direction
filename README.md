@@ -36,7 +36,7 @@ are read from the file at run time, never hard-coded.
 | Enhancement degrades measurably on unseen noise | `G2` PASS | median direction-free magnitude gap 0.206, threshold 0.10 |
 | The failure direction falls monotonically along the novelty ladder: heard samples, then unheard segment of a heard recording, then unseen type | `U1_novelty_monotone` PASS | holds for all three bounded-mask architectures |
 | On an unseen noise type every architecture lands in the same failure class, **inert** | `U1_failure_class` PASS | B1, B3 and CM all inert |
-| That behaviour is not an artefact of bounded masks | `U2_beyond_bounded` PASS | 2 of 3 non-bounded classes; the generative class is pending |
+| That behaviour is not an artefact of bounded masks | `U2_beyond_bounded` PASS | 3 of 3 non-bounded classes, the generative one included |
 | Training-noise diversity moves the direction | `D_fsd` partial (3 of 3) | FSD50K-trained models remove 0.92 to 0.96 of the noise excess |
 | A narrow, weather-only form of the pre-hoc predictor replicates on fresh seeds | `C3c` HOLDS (6 of 6), `C3_level_recheck` PASS (6 of 6) | registered after it held on 15 earlier models |
 | The ladder result survives an unheard *recording* of a heard type | `r3` intermediate | 9 of 9 runs |
@@ -66,8 +66,8 @@ result, and the mechanism built on it, are withdrawn.
 ## What we achieved
 
 - **A pre-registered gate ledger for speech enhancement.** 31 rows: 28
-  registered gates, 3 post-hoc arms kept in a separate table. 29 carry a
-  machine-readable verdict, one is pending and one was never run. Every verdict
+  registered gates, 3 post-hoc arms kept in a separate table. 30 carry a
+  machine-readable verdict and one was never run. Every verdict
   file records the gate file's commit, its SHA-256 digest, the code commit, the
   thresholds used and every per-cell number.
 - **A direction metric with an oracle floor.** The oracle Wiener mask itself
