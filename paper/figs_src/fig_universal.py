@@ -1,6 +1,6 @@
 """Two paper figures from committed CSVs. Run from the repo root:
     python paper/figs_src/fig_universal.py
-fig_ladder: median d_g per rung (R1, R2, R4) by SNR for b1, b3, cm, dfn3 (U1 and U2 cells).
+fig_ladder: median d_g per rung (R1, R2, R4) by SNR for b1, b3, cm, dfn3, sgmse (U1 and U2 cells).
 fig_u3_ceiling: U3 mean within-cell rho per arm against the label-reliability ceiling.
 """
 import pandas as pd
@@ -15,10 +15,11 @@ OUT = "paper/figs/"
 
 cells = pd.concat([pd.read_csv(U + "u1_cells.csv"), pd.read_csv(U + "u2_cells.csv")])
 cells = cells[cells.fold == "all"].drop_duplicates(["arch", "snr"])
-names = {"b1": "B1", "b3": "B3", "cm": "CM", "dfn3": "DFN3 (half-A fine-tune)"}
+names = {"b1": "B1", "b3": "B3", "cm": "CM", "dfn3": "DFN3 (half-A)",
+         "sgmse": "SGMSE+ (half-A)"}
 cols = {"R1": "#1f3a6e", "R2": "#c77d14", "R4": "#7a7a7a"}
 labs = {"R1": "R1 heard samples", "R2": "R2 unheard segment", "R4": "R4 unseen type"}
-fig, axs = plt.subplots(1, 4, figsize=(7.16, 1.9), sharey=True)
+fig, axs = plt.subplots(1, 5, figsize=(7.16, 1.9), sharey=True)
 for ax, a in zip(axs, names):
     g = cells[cells.arch == a].sort_values("snr")
     for r in ("R1", "R2", "R4"):
