@@ -15,7 +15,7 @@ from pathlib import Path
 
 # Paths come from the shell (make_figs.ps1 sets both). The old hard-coded paths
 # pointed at a stale clone and a MarVEN copy that no longer exists.
-REPO = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parents[1]   # the script lives in scripts/
 for _v in ("FAILDIR_ROOT", "FAILDIR_CKPT"):
     if _v not in os.environ:
         raise SystemExit(f"set {_v} first (or run make_figs.ps1)")

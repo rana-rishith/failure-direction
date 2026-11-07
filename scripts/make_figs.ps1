@@ -15,6 +15,9 @@ $E = "C:\Users\ranar\anaconda3\envs\faildir"
 $env:PATH = "$E;$E\Library\mingw-w64\bin;$E\Library\usr\bin;$E\Library\bin;$E\Scripts;$E\bin;" + $env:PATH
 $py = Join-Path $E "python.exe"
 $env:FAILDIR_ROOT = Join-Path $R "Failure-Direction-Datasets\MarVEN"
+# The figure scripts import pandas directly and never import config.py, so the
+# pin there does not reach them and MKL kills them with 0xc06d007f.
+if (-not $env:MKL_THREADING_LAYER) { $env:MKL_THREADING_LAYER = "SEQUENTIAL" }
 $env:FAILDIR_CKPT = Join-Path $repo "ckpt"
 $man = Join-Path $env:FAILDIR_ROOT "manifest.csv"
 $out = "paper\figs"

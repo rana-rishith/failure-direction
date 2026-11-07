@@ -433,7 +433,7 @@ def main():
     a = ap.parse_args()
     if not a.figs:
         # Run button / no arguments: use the repo's default locations
-        root = Path(__file__).resolve().parent
+        root = Path(__file__).resolve().parents[1]   # the script lives in scripts/
         a.eval_dir = a.eval_dir or str(root / "results" / "eval")
         a.curves_csv = a.curves_csv or str(root / "results" / "metrics" / "training_curves.csv")
         a.out_dir = str(root / a.out_dir)
