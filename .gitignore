@@ -119,3 +119,7 @@ figures/
 # session handoff briefs: process scaffolding, not repository content.
 # A pattern, not one filename, so no handoff file can reappear here.
 *handoff*.md
+
+# per-utterance dump of the post hoc decomposition check (14 MB, regenerate with
+# scripts/decomp_check.py). Its medians are in summary_posthoc.csv, which IS committed.
+results/decomp_check/rows_posthoc.csv
