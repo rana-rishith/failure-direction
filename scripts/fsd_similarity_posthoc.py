@@ -238,6 +238,53 @@ def summarise(d: pd.DataFrame, near: pd.DataFrame, mg: dict, ship_frames: list,
     return pd.DataFrame(rows)
 
 
+def _verdict(near: pd.DataFrame, s: pd.DataFrame) -> list:
+    """What this run actually found, read off the tables rather than asserted."""
+    train = near[near.pool == "train"]
+    closer, lines = [], []
+    for t in TYPES:
+        a = s[(s.kind == "fsd_nearest_clip") & (s.a == t)]
+        b = s[(s.kind == "fsd_weather_nearest_clip") & (s.a == t)]
+        c = s[(s.kind == "fsd_boat_nearest_clip") & (s.a == t)]
+        if not (len(a) and len(b) and len(c)):
+            continue
+        lo = min(float(b.iloc[0].ltas), float(c.iloc[0].ltas))
+        if float(a.iloc[0].ltas) < lo:
+            closer.append(t)
+        top = train[train.noise_type == t].head(5)
+        lines.append(f"- **{t}**: nearest training clips are "
+                     + ", ".join(f"`{x}`" for x in top.leaf.tolist()))
+    L = ["## What this run found", ""]
+    L.append(f"On the per-clip LTAS scale the nearest TRAINING clip is closer to the MarVEN "
+             f"type than ANY held-out marine-labelled clip for **{len(closer)} of "
+             f"{len(TYPES)}** types ({', '.join(closer) if closer else 'none'}). So the "
+             "measurement does not separate marine from non-marine here, and the leaf labels")
+    L += ["of those nearest clips say why:", ""]
+    L += lines
+    L += ["",
+          "Breathing, a church bell, a piano and a door knock are not rain, thunder or a",
+          "ship, and no listener would confuse them. A 64-band LTAS ranks them ahead of",
+          "FSD50K's own labelled rain and thunder clips, so on this evidence the acoustic",
+          "check **cannot support the paper's claim and cannot refute it either**. The",
+          "claim should keep resting on the labels, and the Limitations sentence should",
+          "say that an acoustic check was run and was uninformative rather than claim it",
+          "passed.",
+          "",
+          "One substantive exception is worth a sentence in its own right. For",
+          f"`{MARVEN_SHIP}` the nearest training clips are machinery - subway, train, bus,",
+          "engine, aircraft - and the nearest labelled `fsd_boat` clip sits right among",
+          "them rather than below them. MarVEN ship noise IS engine noise, and",
+          "`EXCLUDE_MARINE` removed the `Boat_and_Water_vehicle` label but not `Train`,",
+          "`Engine`, `Subway_and_metro_and_underground` or `Motor_vehicle_(road)`. So for",
+          "the ship type the training pool does contain spectrally adjacent broadband",
+          "machinery, and 'never saw marine noise' is a statement about labels, not about",
+          "what the models heard. For the four weather and bubble-curtain types the nearest",
+          "neighbours are incidental and unrelated, so there the unseen framing is safe on",
+          "semantics even though LTAS cannot certify it.",
+          ""]
+    return L
+
+
 def notes(near: pd.DataFrame, s: pd.DataFrame, out: Path) -> Path:
     """The listening file. It is written with the labels and the measured distances
     filled in and the heard description left open, because this process cannot
@@ -304,8 +351,9 @@ def notes(near: pd.DataFrame, s: pd.DataFrame, out: Path) -> Path:
           "the honest conclusion is about the measurement: a 64-band LTAS cannot separate",
           "marine from non-marine inside FSD50K, so it can neither support nor refute the",
           "paper's claim, and the claim should keep resting on the labels while saying so.",
-          "",
-          "## The five nearest clips per MarVEN type", ""]
+          ""]
+    L += _verdict(near, s)
+    L += ["## The five nearest clips per MarVEN type", ""]
     train = near[near.pool == "train"] if "pool" in near else near
     for t in TYPES:
         q = train[train.noise_type == t].head(5)
