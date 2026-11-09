@@ -9,7 +9,8 @@ why they live under results/bss_posthoc/. The protocol requires a check computed
 after the fact to say so; this is one, and it can never be read as confirmatory.
 
 The question is whether the direction index d adds anything to the standard
-decomposition, given that level alignment flips its sign on 20.6 % of utterances.
+decomposition, given that level alignment moves d by -0.992 to +1.150 and changed
+sign on up to 69.2 % of draws (\bsBiasMin, \bsBiasMax, \bsFlipMax in the paper).
 Per utterance of marven_test_v1, on the enhanced output regenerated in memory:
 
     SI-SIR, SI-SAR      src.bss.si_terms, the Le Roux et al. (2019) split, with
