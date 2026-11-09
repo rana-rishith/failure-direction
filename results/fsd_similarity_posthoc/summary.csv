@@ -1,0 +1,52 @@
+kind,a,b,k,ltas,fd,n
+fsd_nearest_clip,rainfall,clip_26335,1.0,5.807666301727295,,29850.0
+fsd_top10_clips,rainfall,per-clip median of the 10 nearest,10.0,7.0315351486206055,,10.0
+fsd_nearest_clip,lightning,clip_364680,1.0,3.1867101192474365,,29850.0
+fsd_top10_clips,lightning,per-clip median of the 10 nearest,10.0,3.817655920982361,,10.0
+fsd_nearest_clip,hurricane,clip_336391,1.0,2.6134731769561768,,29850.0
+fsd_top10_clips,hurricane,per-clip median of the 10 nearest,10.0,3.4287266731262207,,10.0
+fsd_nearest_clip,bubble_curtain,clip_329624,1.0,3.8189759254455566,,29850.0
+fsd_top10_clips,bubble_curtain,per-clip median of the 10 nearest,10.0,4.3319151401519775,,10.0
+fsd_nearest_clip,large_commercial_ship,clip_187305,1.0,2.8343584537506104,,29850.0
+fsd_top10_clips,large_commercial_ship,per-clip median of the 10 nearest,10.0,3.2101962566375732,,10.0
+fsd_weather_nearest_clip,rainfall,clip_135034,1.0,9.567831039428711,,200.0
+fsd_weather_top10_clips,rainfall,per-clip median of the 10 nearest,10.0,10.64783763885498,,10.0
+fsd_weather_nearest_clip,lightning,clip_127127,1.0,3.832556962966919,,200.0
+fsd_weather_top10_clips,lightning,per-clip median of the 10 nearest,10.0,5.176063060760498,,10.0
+fsd_weather_nearest_clip,hurricane,clip_347854,1.0,4.005580425262451,,200.0
+fsd_weather_top10_clips,hurricane,per-clip median of the 10 nearest,10.0,5.88577675819397,,10.0
+fsd_weather_nearest_clip,bubble_curtain,clip_343168,1.0,4.411481857299805,,200.0
+fsd_weather_top10_clips,bubble_curtain,per-clip median of the 10 nearest,10.0,7.034524917602539,,10.0
+fsd_weather_nearest_clip,large_commercial_ship,clip_135447,1.0,3.9172661304473877,,200.0
+fsd_weather_top10_clips,large_commercial_ship,per-clip median of the 10 nearest,10.0,4.505171298980713,,10.0
+fsd_boat_nearest_clip,rainfall,clip_154833,1.0,11.457566261291504,,25.0
+fsd_boat_top10_clips,rainfall,per-clip median of the 10 nearest,10.0,13.823503017425537,,10.0
+fsd_boat_nearest_clip,lightning,clip_274909,1.0,5.477110862731934,,25.0
+fsd_boat_top10_clips,lightning,per-clip median of the 10 nearest,10.0,8.73705768585205,,10.0
+fsd_boat_nearest_clip,hurricane,clip_328541,1.0,7.448719501495361,,25.0
+fsd_boat_top10_clips,hurricane,per-clip median of the 10 nearest,10.0,18.27237892150879,,10.0
+fsd_boat_nearest_clip,bubble_curtain,clip_274908,1.0,7.3853912353515625,,25.0
+fsd_boat_top10_clips,bubble_curtain,per-clip median of the 10 nearest,10.0,16.49574375152588,,10.0
+fsd_boat_nearest_clip,large_commercial_ship,clip_31776,1.0,3.705406904220581,,25.0
+fsd_boat_top10_clips,large_commercial_ship,per-clip median of the 10 nearest,10.0,5.8730998039245605,,10.0
+fsd_pooled_topk,rainfall,top10,10.0,5.697936058044434,7156.57977129469,2292.0
+fsd_pooled_topk,rainfall,top50,50.0,6.619802951812744,7642.982033933977,14949.0
+fsd_pooled_topk,rainfall,top200,200.0,7.966282367706299,8062.730315145184,61103.0
+fsd_pooled_topk,lightning,top10,10.0,3.0292961597442627,5103.295011654952,1765.0
+fsd_pooled_topk,lightning,top50,50.0,2.92596697807312,6395.093753349952,14969.0
+fsd_pooled_topk,lightning,top200,200.0,3.4145233631134033,4834.502415471704,68771.0
+fsd_pooled_topk,hurricane,top10,10.0,2.3832337856292725,13235.01156596525,1357.0
+fsd_pooled_topk,hurricane,top50,50.0,2.5472683906555176,27300.83228641768,11958.0
+fsd_pooled_topk,hurricane,top200,200.0,3.042403221130371,24473.83835441249,41903.0
+fsd_pooled_topk,bubble_curtain,top10,10.0,3.7106518745422363,1503.7393417467342,1837.0
+fsd_pooled_topk,bubble_curtain,top50,50.0,3.620709180831909,1881.166991382727,9738.0
+fsd_pooled_topk,bubble_curtain,top200,200.0,4.069304466247559,4159.152517776163,39804.0
+fsd_pooled_topk,large_commercial_ship,top10,10.0,2.671182155609131,1125.6595694805087,3157.0
+fsd_pooled_topk,large_commercial_ship,top50,50.0,2.6923036575317383,1237.1375492945465,18204.0
+fsd_pooled_topk,large_commercial_ship,top200,200.0,2.8156545162200928,1110.5178259137533,72843.0
+control_pooled,large_commercial_ship,deepship_ship,60.0,8.291152000427246,5570.106765720276,18780.0
+control_per_crop_nearest,large_commercial_ship,deepship_ship nearest crop,1.0,3.8581349849700928,,60.0
+control_per_crop_top10,large_commercial_ship,deepship_ship median of 10 nearest crops,10.0,5.303040981292725,,10.0
+calibration,rainfall,hurricane,,29.509014129638672,56422.92359282411,
+calibration,rainfall,lightning,,11.174515724182129,9573.017257275304,
+calibration,large_commercial_ship,bubble_curtain,,23.280935287475586,35349.97043625183,
