@@ -123,3 +123,13 @@ figures/
 # per-utterance dump of the post hoc decomposition check (14 MB, regenerate with
 # scripts/decomp_check.py). Its medians are in summary_posthoc.csv, which IS committed.
 results/decomp_check/rows_posthoc.csv
+
+# manuscript working folders and summaries: they hold author emails. paper/*.tex above
+# does not reach subfolders.
+paper/humanized_*/
+paper/revised_*/
+docs/summaries/
+
+# per-utterance dumps, same rule as results/probe/*/rows.csv
+results/bss_posthoc/rows.csv
+results/asr_direction/rows.csv
