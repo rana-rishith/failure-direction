@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 560" width="1500" height="560">
+<defs>
+<marker id="a1d1d1d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d1d1d"/></marker>
+<marker id="ac77d14" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c77d14"/></marker>
+</defs>
+<rect width="1500" height="560" fill="white"/>
+<rect x="20" y="40" width="250" height="140" rx="14" fill="#f3f3f3" stroke="#8a8a8a" stroke-width="2.5"/>
+<text x="145.0" y="93.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="27" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">Noisy speech</text>
+<text x="145.0" y="125.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="normal" font-style="normal" fill="#444" text-anchor="middle">MarVEN,</text>
+<text x="145.0" y="150.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="normal" font-style="normal" fill="#444" text-anchor="middle">DEMAND, FSD50K</text>
+<circle cx="24" cy="44" r="17" fill="#1f3a6e"/>
+<text x="24" y="51" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="white" text-anchor="middle">1</text>
+<rect x="320" y="40" width="270" height="140" rx="14" fill="#eaf0f8" stroke="#1f3a6e" stroke-width="2.5"/>
+<text x="455.0" y="106.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="27" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">Model</text>
+<text x="455.0" y="138.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="normal" font-style="normal" fill="#444" text-anchor="middle">B1, B3, CM, DFN3, SB</text>
+<circle cx="324" cy="44" r="17" fill="#1f3a6e"/>
+<text x="324" y="51" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="white" text-anchor="middle">2</text>
+<rect x="640" y="40" width="270" height="140" rx="14" fill="#fbf2e6" stroke="#c77d14" stroke-width="2.5"/>
+<text x="775.0" y="106.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="27" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">Energy split</text>
+<text x="775.0" y="138.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="normal" font-style="normal" fill="#444" text-anchor="middle">against clean speech</text>
+<circle cx="644" cy="44" r="17" fill="#1f3a6e"/>
+<text x="644" y="51" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="white" text-anchor="middle">3</text>
+<rect x="960" y="40" width="280" height="140" rx="14" fill="white" stroke="#1f3a6e" stroke-width="2.5"/>
+<text x="1100.0" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="27" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">Direction <tspan font-style='italic'>d</tspan></text>
+<line x1="995" y1="118" x2="1205" y2="118" stroke="#1d1d1d" stroke-width="3"/>
+<line x1="995" y1="110" x2="995" y2="126" stroke="#1d1d1d" stroke-width="3"/>
+<text x="995" y="150" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">−1</text>
+<line x1="1100.0" y1="110" x2="1100.0" y2="126" stroke="#1d1d1d" stroke-width="3"/>
+<text x="1100.0" y="150" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">0</text>
+<line x1="1205" y1="110" x2="1205" y2="126" stroke="#1d1d1d" stroke-width="3"/>
+<text x="1205" y="150" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">+1</text>
+<text x="978" y="172" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="18" font-weight="normal" font-style="normal" fill="#444" text-anchor="start">noise left</text>
+<text x="1222" y="172" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="18" font-weight="normal" font-style="normal" fill="#444" text-anchor="end">speech lost</text>
+<rect x="1290" y="40" width="190" height="140" rx="14" fill="#eaf0f8" stroke="#1f3a6e" stroke-width="2.5"/>
+<text x="1385.0" y="93.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="27" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">Claims 1, 2</text>
+<text x="1385.0" y="125.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="normal" font-style="normal" fill="#444" text-anchor="middle">novelty,</text>
+<text x="1385.0" y="150.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="normal" font-style="normal" fill="#444" text-anchor="middle">diversity</text>
+<rect x="320" y="270" width="590" height="130" rx="14" fill="#eaf0f8" stroke="#1f3a6e" stroke-width="2.5"/>
+<text x="615.0" y="331.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="27" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">Predictor</text>
+<text x="615.0" y="363.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="normal" font-style="normal" fill="#444" text-anchor="middle">noisy-input features only, LightGBM</text>
+<circle cx="324" cy="274" r="17" fill="#1f3a6e"/>
+<text x="324" y="281" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="white" text-anchor="middle">4</text>
+<rect x="960" y="270" width="280" height="130" rx="14" fill="white" stroke="#1f3a6e" stroke-width="2.5"/>
+<text x="1100.0" y="331.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="27" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">Speech-loss rank</text>
+<text x="1100.0" y="363.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="normal" font-style="normal" fill="#444" text-anchor="middle">per utterance</text>
+<rect x="1290" y="270" width="190" height="130" rx="14" fill="#eaf0f8" stroke="#1f3a6e" stroke-width="2.5"/>
+<text x="1385.0" y="331.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="27" font-weight="bold" font-style="normal" fill="#1d1d1d" text-anchor="middle">Claim 3</text>
+<text x="1385.0" y="363.0" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="normal" font-style="normal" fill="#444" text-anchor="middle">prediction</text>
+<line x1="270" y1="110.0" x2="316" y2="110.0" stroke="#1d1d1d" stroke-width="3" marker-end="url(#a1d1d1d)"/>
+<line x1="590" y1="110.0" x2="636" y2="110.0" stroke="#1d1d1d" stroke-width="3" marker-end="url(#a1d1d1d)"/>
+<line x1="910" y1="110.0" x2="956" y2="110.0" stroke="#1d1d1d" stroke-width="3" marker-end="url(#a1d1d1d)"/>
+<line x1="1240" y1="110.0" x2="1286" y2="110.0" stroke="#1d1d1d" stroke-width="3" marker-end="url(#a1d1d1d)"/>
+<path d="M145,180 L145,335.0 L314,335.0" fill="none" stroke="#1d1d1d" stroke-width="3" marker-end="url(#a1d1d1d)"/>
+<line x1="775" y1="180" x2="775" y2="266" stroke="#c77d14" stroke-width="3" stroke-dasharray="9 7" marker-end="url(#ac77d14)"/>
+<text x="790" y="232" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="normal" font-style="italic" fill="#c77d14" text-anchor="start">label, training only</text>
+<line x1="910" y1="335.0" x2="956" y2="335.0" stroke="#1d1d1d" stroke-width="3" marker-end="url(#a1d1d1d)"/>
+<line x1="1240" y1="335.0" x2="1286" y2="335.0" stroke="#1d1d1d" stroke-width="3" marker-end="url(#a1d1d1d)"/>
+<rect x="20" y="450" width="1460" height="70" rx="14" fill="#f3f3f3" stroke="#8a8a8a" stroke-width="2.5"/>
+<circle cx="24" cy="454" r="17" fill="#1f3a6e"/>
+<text x="24" y="461" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="white" text-anchor="middle">5</text>
+<text x="750" y="495" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="22" font-weight="normal" font-style="normal" fill="#1d1d1d" text-anchor="middle">Every test: threshold committed to a public repository before the run that decided it</text>
+</svg>

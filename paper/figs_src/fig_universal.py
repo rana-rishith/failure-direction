@@ -16,10 +16,10 @@ OUT = "paper/figs/"
 cells = pd.concat([pd.read_csv(U + "u1_cells.csv"), pd.read_csv(U + "u2_cells.csv")])
 cells = cells[cells.fold == "all"].drop_duplicates(["arch", "snr"])
 names = {"b1": "B1", "b3": "B3", "cm": "CM", "dfn3": "DFN3 (half-A)",
-         "sgmse": "SGMSE+ (half-A)"}
+         "sgmse": "SB (half-A)"}
 cols = {"R1": "#1f3a6e", "R2": "#c77d14", "R4": "#7a7a7a"}
 labs = {"R1": "R1 heard samples", "R2": "R2 unheard segment", "R4": "R4 unseen type"}
-fig, axs = plt.subplots(1, 5, figsize=(7.16, 1.9), sharey=True)
+fig, axs = plt.subplots(1, 5, figsize=(7.16, 2.15), sharey=True)
 for ax, a in zip(axs, names):
     g = cells[cells.arch == a].sort_values("snr")
     for r in ("R1", "R2", "R4"):
@@ -30,8 +30,9 @@ for ax, a in zip(axs, names):
     ax.set_xlabel("input SNR (dB)")
     ax.set_ylim(-1.05, 0.5)
 axs[0].set_ylabel(r"median $d_g$")
-axs[0].legend(frameon=False, fontsize=6, loc="center right", bbox_to_anchor=(1.02, 0.52))
-fig.tight_layout()
+h, l = axs[0].get_legend_handles_labels()
+fig.legend(h, l, frameon=False, fontsize=7, ncol=3, loc="lower center", bbox_to_anchor=(0.5, 0.0))
+fig.tight_layout(rect=(0, 0.1, 1, 1))
 fig.savefig(OUT + "fig_ladder.pdf"); fig.savefig(OUT + "fig_ladder.png", dpi=200)
 
 v = pd.read_json(U + "u3_verdict.json", typ="series")
