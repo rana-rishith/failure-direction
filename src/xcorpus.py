@@ -44,6 +44,14 @@ def power(x):
     return float(np.mean((x - x.mean()) ** 2))
 
 
+def _rel(p):
+    """Manifest paths are relative to the repo root, so the committed manifests hold no user folder."""
+    try:
+        return os.path.relpath(p, C.REPO)
+    except ValueError:  # another drive on Windows
+        return str(p)
+
+
 def mix(clean, noise, snr_db):
     """src.diverse.mix semantics: mean-removed powers, noisy = clean + g * noise."""
     g = math.sqrt(power(clean) / (max(power(noise), 1e-12) * 10 ** (snr_db / 10)))
@@ -164,8 +172,8 @@ def build(a):
     bset = dict(zip(base.uid, base.base_rank))
     mv = pd.DataFrame(dict(cond="marven", uid=t.uid, base_uid=t.uid.where(t.uid.isin(bset.keys())),
                            base_rank=t.uid.map(bset), base_noise_type=t.noise_type,
-                           snr=t.target_snr_db, noisy=[str(root / p) for p in t.noisy_path],
-                           clean=[str(root / p) for p in t.clean_path], src="marven"))
+                           snr=t.target_snr_db, noisy=[_rel(root / p) for p in t.noisy_path],
+                           clean=[_rel(root / p) for p in t.clean_path], src="marven"))
     mv.to_csv(parts_dir / "marven.csv", index=False)
     print(f"marven: {len(mv)} rows ({mv.base_uid.notna().sum()} base)")
     for cond in conds:
@@ -186,8 +194,8 @@ def build(a):
             if not p.exists():
                 sf.write(str(p), x, SR, subtype="FLOAT")
             rec.append(dict(cond=cond, uid=r.uid, base_uid=r.uid, base_rank=r.base_rank,
-                            base_noise_type=r.noise_type, snr=r.target_snr_db, noisy=str(p),
-                            clean=str(root / r.clean_path), src=src, mix_gain=gain))
+                            base_noise_type=r.noise_type, snr=r.target_snr_db, noisy=_rel(p),
+                            clean=_rel(root / r.clean_path), src=src, mix_gain=gain))
             if i % 100 == 0:
                 print(f"  {cond}: {i}/{len(base)}", flush=True)
         pd.DataFrame(rec).to_csv(part, index=False)
@@ -201,7 +209,7 @@ def build(a):
         names = names[:8]
     pd.DataFrame(dict(cond="vbdmd_test", uid=[Path(n).stem for n in names], base_uid=None,
                       base_rank=range(len(names)), base_noise_type="vbdmd", snr=np.nan,
-                      noisy=[str(vb / "noisy" / n) for n in names], clean=[str(vb / "clean" / n) for n in names],
+                      noisy=[_rel(vb / "noisy" / n) for n in names], clean=[_rel(vb / "clean" / n) for n in names],
                       src="vbdmd")).to_csv(parts_dir / "vbdmd_test.csv", index=False)
     m = pd.concat([pd.read_csv(f) for f in sorted(parts_dir.glob("*.csv"))], ignore_index=True)
     m.to_csv(OUT / "manifest.csv", index=False)

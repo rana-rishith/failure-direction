@@ -10,9 +10,9 @@ $ErrorActionPreference = "Continue"     # python writes progress to stderr; do n
 # the script now lives in scripts/, so the repo root is two levels up
 $repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $repo
-$env:FAILDIR_ROOT = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\MarVEN"
+$env:FAILDIR_ROOT = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\MarVEN"
 $env:FAILDIR_CKPT = Join-Path $repo "ckpt"
-$py = "C:\Users\ranar\anaconda3\envs\faildir\python.exe"
+$py = "$env:USERPROFILE\anaconda3\envs\faildir\python.exe"
 New-Item -ItemType Directory -Force (Join-Path $repo "logs") | Out-Null
 $log = Join-Path $repo ("logs\batch_" + (Get-Date -Format "yyyyMMdd_HHmm") + ".log")
 powercfg /change standby-timeout-ac 0

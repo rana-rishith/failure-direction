@@ -9,10 +9,10 @@
 # started with one against a running fine-tune and did 17 files in 58 min (180 s each,
 # against 32.7 s alone) while halving the trainer's rate. Serial finishes both sooner.
 $ErrorActionPreference = "Stop"
-$SG   = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\sgmse"
-$REPO = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\repo-failure-direction"
-$SGPY = "C:\Users\ranar\anaconda3\envs\sgmse\python.exe"
-$FD   = "C:\Users\ranar\anaconda3\envs\faildir"
+$SG   = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\sgmse"
+$REPO = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\repo-failure-direction"
+$SGPY = "$env:USERPROFILE\anaconda3\envs\sgmse\python.exe"
+$FD   = "$env:USERPROFILE\anaconda3\envs\faildir"
 
 function GpuBusy {
     # Our own enhance call is excluded by matching only the two jobs that contend
@@ -70,7 +70,7 @@ if ($rc -ne 0 -or $missing.Count -gt 0) {
 
 # 3. score all 2,280 as ONE population: the 400 pilot outputs plus the new ones
 $env:PATH = "$FD;$FD\Library\mingw-w64\bin;$FD\Library\usr\bin;$FD\Library\bin;$FD\Scripts;$FD\bin;" + $env:PATH
-$env:FAILDIR_ROOT   = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\MarVEN"
+$env:FAILDIR_ROOT   = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\MarVEN"
 $env:FAILDIR_CKPT   = "$REPO\ckpt"
 $env:FAILDIR_DEVICE = "cpu"      # scoring from wavs needs no GPU
 Set-Location $REPO

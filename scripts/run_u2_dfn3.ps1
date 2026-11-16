@@ -12,18 +12,18 @@
 # One GPU job at a time: do not start this while a U1 or U3 run is going.
 param(
     [string[]]$Folds = @("weather", "anthro"),
-    [string]$Base = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\u2",
+    [string]$Base = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\u2",
     [int]$Steps = 20000
 )
 
-$Repo = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\repo-failure-direction"
+$Repo = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\repo-failure-direction"
 $Orig = $env:PATH
-$env:FAILDIR_ROOT = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\MarVEN"
+$env:FAILDIR_ROOT = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\MarVEN"
 $env:FAILDIR_CKPT = "$Repo\ckpt"
 Set-Location $Repo
 
 function Use-Env($name) {
-    $e = "C:\Users\ranar\anaconda3\envs\$name"
+    $e = "$env:USERPROFILE\anaconda3\envs\$name"
     $env:PATH = "$e;$e\Library\mingw-w64\bin;$e\Library\usr\bin;$e\Library\bin;$e\Scripts;$e\bin;" + $Orig
 }
 

@@ -38,8 +38,8 @@ REPO = Path.cwd().parent if Path.cwd().name == "notebooks" else Path.cwd()
 sys.path.insert(0, str(REPO))
 
 # Point these at your copies. Leave them unset to use <repo>/data/...
-# os.environ["FAILDIR_ROOT"]  = r"C:\\Users\\ranar\\failure-direction\\MarVEN"
-# os.environ["FAILDIR_TRANS"] = r"C:\\Users\\ranar\\LibriSpeech\\train-clean-100"
+# os.environ["FAILDIR_ROOT"]  = r"C:\\path\\to\\failure-direction\\MarVEN"
+# os.environ["FAILDIR_TRANS"] = r"C:\\path\\to\\LibriSpeech\\train-clean-100"
 
 import config as C          # sets KMP_DUPLICATE_LIB_OK before torch is imported
 from src import data as D, models as M, metrics as MT

@@ -12,7 +12,7 @@ $repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $repo
 $R  = Split-Path -Parent $repo
 $SG = Join-Path $R "sgmse"
-$ENVS = "C:\Users\ranar\anaconda3\envs"
+$ENVS = "$env:USERPROFILE\anaconda3\envs"
 $basePath = $env:PATH
 $env:FAILDIR_ROOT = Join-Path $R "Failure-Direction-Datasets\MarVEN"
 $env:FAILDIR_CKPT = Join-Path $repo "ckpt"

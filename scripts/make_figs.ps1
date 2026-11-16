@@ -11,7 +11,7 @@ $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $repo
 $R = Split-Path -Parent $repo
-$E = "C:\Users\ranar\anaconda3\envs\faildir"
+$E = "$env:USERPROFILE\anaconda3\envs\faildir"
 $env:PATH = "$E;$E\Library\mingw-w64\bin;$E\Library\usr\bin;$E\Library\bin;$E\Scripts;$E\bin;" + $env:PATH
 $py = Join-Path $E "python.exe"
 $env:FAILDIR_ROOT = Join-Path $R "Failure-Direction-Datasets\MarVEN"

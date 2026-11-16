@@ -19,7 +19,7 @@ call rain or a boat.
 **The lines below are Rana's to fill in.** Each one names the clip, its FSD50K
 labels and its measured distance; the `heard:` field is deliberately empty. The
 cached 16 kHz audio is at
-`C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\FSD50K (dataset)\fsd16k/<split>/<fname>.wav`.
+`%USERPROFILE%\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\FSD50K (dataset)\fsd16k/<split>/<fname>.wav`.
 
 ## Reference points, for reading the distances
 

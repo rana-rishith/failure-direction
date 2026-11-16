@@ -20,20 +20,20 @@
 # fold. Enhancement is 6,055 windows of 3 s across both folds.
 param(
     [string[]]$Folds = @("weather", "anthro"),
-    [string]$Base = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\u2",
-    [string]$Sgmse = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\sgmse",
+    [string]$Base = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\u2",
+    [string]$Sgmse = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\sgmse",
     [int]$Steps = 20000,
     [switch]$Gate          # opt in: --force rewrites the committed u2_verdict.json
 )
 
-$Repo = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\repo-failure-direction"
+$Repo = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\repo-failure-direction"
 $Orig = $env:PATH
-$env:FAILDIR_ROOT = "C:\Users\ranar\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\MarVEN"
+$env:FAILDIR_ROOT = "$env:USERPROFILE\Downloads\MAIN-failure-direction(ALL)\Failure-Direction-Datasets\MarVEN"
 $env:FAILDIR_CKPT = "$Repo\ckpt"
 Set-Location $Repo
 
 function Use-Env($name) {
-    $e = "C:\Users\ranar\anaconda3\envs\$name"
+    $e = "$env:USERPROFILE\anaconda3\envs\$name"
     $env:PATH = "$e;$e\Library\mingw-w64\bin;$e\Library\usr\bin;$e\Library\bin;$e\Scripts;$e\bin;" + $Orig
 }
 
