@@ -97,7 +97,7 @@ SNR — and the level-aligned split divides by it. Measured offset over the firs
 ## Gotcha that cost real time
 
 `FAILDIR_CKPT` was set in the inherited shell environment to
-`C:\Users\ranar\failure-direction\ckpt`, which holds 12 checkpoints. The repo's
+`%USERPROFILE%\failure-direction\ckpt`, which holds 12 checkpoints. The repo's
 own `ckpt/` holds 199. Setting only `FAILDIR_ROOT` silently scored the wrong
 weights, and the first verification run reported every tag as DIFFERING with
 `g = 0.615` against a stored `g = 0.998`. Set both variables, every time; a
@@ -173,6 +173,9 @@ verdict, and keep the per-cell labels as the finer view underneath.
   46 tag outputs under `results/probe/`.
 - Audit over all 46: 0.00% NaN across d/d_g/nr/nr_g/r_add/delta_d/g/sisdr_gain,
   zero rows hitting the gain clamp [0.1, 10.0], every tag has summary.md. No flags.
+  **Correction, 2026-11-16:** the clamp count was wrong. The stored `g` is below
+  0.1 on 18 of the 103,000 rows (9 `dfn3`, 9 `sgmse`), and the largest `g` is
+  2.614. The same correction applies to the 16-tag audit above.
 - Per-tag cost: b3 ~6 min, b1/cm ~15-17 min.
 
 ## Reconciliation against the registered gates

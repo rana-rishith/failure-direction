@@ -1,10 +1,11 @@
 cff-version: 1.2.0
-title: "Failure Direction: pre-hoc, reference-free prediction of speech-enhancement failure direction and magnitude"
+title: "Do No Harm, Do No Good: How Speech Enhancement Fails on Unseen Noise and How to See It Coming"
 message: "If you use this code, please cite it."
 type: software
 authors:
   - given-names: Rana Rishith
     family-names: Musunuri
+    orcid: "https://orcid.org/0009-0001-7718-216X"
 repository-code: "https://github.com/rana-rishith/failure-direction"
 license: MIT
 keywords:
